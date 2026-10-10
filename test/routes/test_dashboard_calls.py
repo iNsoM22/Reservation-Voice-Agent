@@ -89,3 +89,24 @@ def test_call_log_pages_20_per_page_newest_first(tmp_path):
         assert "Conversation 00" in second.text
         assert client.get("/dashboard/calls?page=0").status_code == 422
         assert client.get("/dashboard/calls?page=1").status_code == 200
+
+
+def test_call_pagination_redirects_to_last_page_and_page_one_when_empty(tmp_path):
+    with make_client(tmp_path) as client:
+        login(client)
+        empty_page = client.get("/dashboard/calls?page=2")
+        assert empty_page.status_code == 303
+        assert empty_page.headers["location"] == "/dashboard/calls?page=1"
+
+        with Session(client.app.state.engine) as session:
+            service = CallLogService(session)
+            for index in range(21):
+                service.log_simulation(
+                    f"sim-{index:02}",
+                    f"Call {index:02}",
+                    [],
+                    started_at=datetime(2026, 1, 1, tzinfo=UTC) + timedelta(days=index),
+                )
+        out_of_range = client.get("/dashboard/calls?page=3")
+        assert out_of_range.status_code == 303
+        assert out_of_range.headers["location"] == "/dashboard/calls?page=2"

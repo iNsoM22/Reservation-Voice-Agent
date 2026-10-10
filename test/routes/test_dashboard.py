@@ -99,3 +99,21 @@ def test_dashboard_paginates_and_patient_detail_hides_deleted(tmp_path):
         client.delete(f"/patients/{patient_id}", headers={"X-API-Key": "api"})
         assert client.get(f"/dashboard/patients/{patient_id}").status_code == 404
         assert client.get("/dashboard/patients?page=0").status_code == 422
+
+
+def test_patient_pagination_redirects_to_last_page_and_page_one_when_empty(tmp_path):
+    with make_client(tmp_path) as client:
+        login(client)
+        empty_page = client.get("/dashboard/patients?page=2")
+        assert empty_page.status_code == 303
+        assert empty_page.headers["location"] == "/dashboard/patients?page=1"
+
+        for index in range(11):
+            client.post(
+                "/patients",
+                json={**PATIENT, "first_name": f"Patient{chr(65 + index)}"},
+                headers={"X-API-Key": "api"},
+            )
+        out_of_range = client.get("/dashboard/patients?page=3")
+        assert out_of_range.status_code == 303
+        assert out_of_range.headers["location"] == "/dashboard/patients?page=2"

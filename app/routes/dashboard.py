@@ -29,6 +29,10 @@ def patients(request: Request, page: int = Query(default=1, ge=1, le=100_000)):
     with Session(request.app.state.engine) as session:
         rows, total = PatientService(session).list_page(page, PAGE_SIZE)
         pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
+        if page > pages:
+            return RedirectResponse(
+                f"/dashboard/patients?page={pages}", status_code=303
+            )
         return templates.TemplateResponse(
             request=request,
             name="patients.html",
