@@ -5,12 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.143.0",
+    "psycopg[binary]>=3.3.6",
     "pydantic>=2.14.0",
     "sqlalchemy>=2.1.4",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
 dev = [
+    "httpx2>=2.13.1",
     "pytest>=9.1.1",
     "ruff>=0.17.0",
 ]
