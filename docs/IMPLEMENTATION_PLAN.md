@@ -1,6 +1,6 @@
 # Patient Registration Voice Agent: implementation plan
 
-Source: `../../Context/voice_ai_agent_coding_challenge.md`. This document is a plan, not an implementation. The project is a patient registration system despite the existing folder name.
+Source: `../../Context/voice_ai_agent_coding_challenge.md`. This document records the intended design and current delivery status. The project is a patient registration system despite the existing folder name.
 
 ## TL;DR
 
@@ -17,6 +17,10 @@ Use **Vapi** for the U.S. phone number, speech, and conversational LLM; **Python
 | Save and graceful result | `register_patient` Vapi function tool, webhook adapter, patient service | Webhook validates the tool request, invokes the same service used by REST, and returns a Vapi result tied to `toolCallId`. Success includes patient ID; failure is a short speakable error. Avoid duplicate inserts on tool retries with a call/tool idempotency key. |
 | Persistent patient model | PostgreSQL table and repository | UUID primary key; date, enum/check constraints, bounded text, UTC `created_at`/`updated_at`, nullable `deleted_at`. Validate in API and database where practical. Restart the app and verify the record remains. |
 | REST CRUD | FastAPI routes and shared service | `GET /patients` with three optional filters, `GET /patients/{id}`, `POST /patients`, partial `PUT /patients/{id}`, and soft `DELETE /patients/{id}`. Hide deleted records from ordinary reads. Use the specified `{ "data": ..., "error": null }` envelope and consistent error envelope/status codes. |
+| Admin access and bootstrap | Dashboard auth routes, user model, `scripts/create_admin.py` | Delivered: bootstrap the initial administrator from environment settings and protect dashboard pages with signed sessions and CSRF checks. |
+| Patient dashboard | Jinja templates and static assets | Delivered: authenticated patient list/detail pages and call-log list/detail pages. Templates live in `app/templates/`; browser styles and behavior live in `app/static/`. |
+| Browser simulation | Dashboard simulation routes and browser assets | Delivered: authenticated text/browser-speech intake simulation with field validation, correction/readback, explicit save confirmation, and persisted simulation call logs. It is independent of live Vapi registration. |
+| Vapi end-of-call reports | Authenticated Vapi route and call-log service | Delivered: persist `end-of-call-report` data for review in the call dashboard. This does not implement the registration tool write. |
 | Returning caller | Optional lookup tool | After core path works, look up normalized phone, confirm identity before speaking or changing a matching record, and offer an update. This is a bonus, not a launch dependency. |
 | Deployment and visibility | Railway API + Postgres, Vapi settings, README | Set `DATABASE_URL` and webhook secret through environment variables, deploy HTTPS API, configure Vapi tool URL, add live number/API URL to README, and place a second call. Log call ID, validation result, and write outcome; avoid full patient payloads in public logs. |
 
@@ -57,7 +61,7 @@ Reservation Voice Agent/
     IMPLEMENTATION_PLAN.md
 ```
 
-Split any module as its responsibilities grow. Every source and test file must remain under 600 lines. Do not add a dashboard, scheduling, transcript storage, or multilingual support until the core phone registration path works.
+Split any module as its responsibilities grow. Every source and test file must remain under 600 lines. The dashboard, browser simulation, and call-log visibility were explicitly requested by the project owner and are delivered; keep the remaining live-phone work focused on the core registration path.
 
 ## Delivery order and validation gates
 
@@ -65,8 +69,8 @@ Split any module as its responsibilities grow. Every source and test file must r
 2. **Plan:** Fix API contracts, schemas, state normalization, Vapi tool shape, hosting, and acceptance cases before writing production code.
 3. **Validate plan:** Check every mandatory challenge row against the feature map above; verify number availability, Vapi webhook response format, Railway persistence, and how reviewer access will work. Resolve gaps before coding.
 4. **TDD: data/API:** For each behavior, write a failing test, observe the expected failure, implement the minimum, rerun, and refactor. Cover validation boundaries, filters, partial update, soft delete, envelopes, restart persistence, and write failures.
-5. **TDD: voice integration:** The authenticated Vapi route currently returns a tool error stub. Next, write contract tests for confirmed registration, retries, and write failures before replacing it. Confirm idempotency and that saving cannot happen before explicit confirmation at the assistant level.
-6. **End-to-end:** Deploy, configure number and tool, complete one real call, query the patient, restart the API, repeat the query, then make a correction/invalid-data call. Complete README with actual live details and limitations.
+5. **Pending TDD: live Vapi registration:** The authenticated Vapi route records end-of-call reports but still returns a tool error for registration calls. Write contract tests for confirmed registration, retries, and write failures before implementing writes. Confirm idempotency and explicit confirmation before saving.
+6. **Pending end-to-end:** Provision/configure Vapi number and assistant, deploy a public HTTPS endpoint, complete a real call, query the patient, restart the API, repeat the query, then make a correction/invalid-data call. Complete README with actual live details and limitations.
 
 ## Decisions and limits to confirm during implementation
 

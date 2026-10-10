@@ -22,4 +22,6 @@
 - Save only after explicit spoken confirmation. Return field-specific validation errors and speakable database failure results.
 - Use a persistent database for the live system, UTC timestamps, UUID patient IDs, and soft deletes.
 - Authenticate Vapi callbacks and protect patient API access. Never commit credentials or real patient data; use synthetic fixtures.
-- Prefer the simplest dependency and structure that meets the challenge. Do not build bonus features before the mandatory flow works.
+- The authenticated admin dashboard uses server-rendered Jinja templates in `app/templates/` and browser assets in `app/static/` (including `scripts/` for admin bootstrap utilities).
+- Dashboard and browser-simulation bonuses were explicitly requested by the project owner; implement those alongside the core API while preserving the patient service as the shared persistence path.
+- Prefer the simplest dependency and structure that meets the challenge. Keep owner-requested bonus work scoped and maintain TDD, Ruff, and the 600-line limit.

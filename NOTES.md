@@ -3,19 +3,18 @@
 ## Current state
 
 - 2026-10-10: Reviewed `../Context/voice_ai_agent_coding_challenge.md` and the UV starter project.
-- Planning is in `docs/IMPLEMENTATION_PLAN.md`; patient models and DTO validation are now implemented.
-- UV dependencies, lockfile, README, API routes, and the inert Vapi webhook are present. Live voice integration, phone number, and deployment are still pending.
-- Review pass: tightened update DTO limits and database constraints; 34 pytest tests pass, Ruff lint and format checks pass.
-- 2026-10-11: Added patient service, authenticated REST routes, settings, Vapi webhook adapter with inert call service, README, and pipeline report. SQLite is the local persistent default; PostgreSQL URLs are supported. 48 tests pass; Ruff lint and format checks pass.
-- Review fix: partial updates now advance `updated_at` even within one clock tick; database errors return a generic 500 without logging patient query values.
-- 2026-10-11: Added authenticated `/dashboard/simulation` using browser Web Speech APIs, text fallback, durable call-log state/transcript, per-field `PatientCreate` validation, correction/readback, explicit save confirmation, and repeat-confirm idempotence. The Vapi stub is unchanged. Tests and browser recognition limitations are documented in README.
-- 2026-10-11: Polished dashboard call list/detail views, transcript wrapping, timestamp display, table and navigation semantics, pagination keyboard behavior, and login validation feedback. Simulation now offers a new session after saving and keeps failed turns out of the visible transcript until accepted. Vapi reports and simulation transcripts are stored; Vapi registration and final-payload logging remain unconfigured.
+- Current implementation: patient models/DTOs, patient service, authenticated REST CRUD, administrator bootstrap and session auth, Jinja patient dashboard, call-log views, and browser registration simulation are implemented. SQLite is the local persistent default; PostgreSQL URLs are supported.
+- The Vapi endpoint authenticates callbacks and persists `end-of-call-report` reports for the call dashboard. Registration tool calls still return an error stub and do not write patients. No Vapi phone number, assistant, or public deployment is configured.
+- The browser simulation supports text input plus optional browser speech, per-field `PatientCreate` validation, correction/readback, explicit save confirmation, persistent transcripts, and repeat-confirm idempotence. It is an independent demo flow, not evidence of live telephony integration.
+- Historical verification counts from earlier implementation stages: 34 and then 48 pytest tests passed at those points, with Ruff lint/format checks passing then. These are not current verification claims.
+- Review fixes include `updated_at` advancement for partial updates within one clock tick and generic database errors without logging patient query values.
+- 2026-10-11 dashboard polish covered call list/detail views, transcript wrapping, timestamp display, table/navigation semantics, pagination keyboard behavior, and login validation feedback.
 
 ## Decisions
 
 - Target stack: Vapi + FastAPI/Pydantic + SQLAlchemy + PostgreSQL + Railway, managed with uv. Use Ruff and pytest.
 - Layout: `app/{validations,models,routes,services,config}` and mirrored `test/` packages.
-- The REST routes use one patient service. The Vapi route will use that same service after its registration stub is replaced.
+- The REST routes use one patient service. The Vapi route should use that same service when its registration stub is replaced.
 - Write tests first for every behavior; observe a meaningful failure before implementing.
 - Keep all source and test files under 600 lines.
 - For a no-upfront-payment demo, prefer Vapi trial number/credits + local SQLite/FastAPI + Cloudflare Quick Tunnel. This depends on an active laptop and remaining credits; it is not a permanent free hosting arrangement.
@@ -24,7 +23,7 @@
 
 1. Confirm Vapi account, free inbound number, available credits, and model/voice/transcriber selections.
 2. Create/publish the assistant prompt; configure the authenticated tool URL; inspect a real Vapi event.
-3. Add confirmation state and idempotency, then replace the call service stub using tests first.
+3. Implement confirmed Vapi registration and retry idempotency using tests first; leave the webhook's report persistence intact.
 4. Keep backend/tunnel live for review, test two real calls and restart persistence, and add actual number/API URL to README.
 
 ## Open issues / changes
@@ -32,7 +31,7 @@
 - Live-call blocker: no Vapi account, number, credits, or provider credentials supplied in the workspace.
 - Public URL blocker: no tunnel/domain is running; a Quick Tunnel URL is temporary and the local machine must remain online.
 - Financial limit: Vapi's free number still consumes call credits; after trial credits, live calls require payment. See `docs/PIPELINE_REPORT.md`.
-- Scope boundary: call service deliberately returns a Vapi tool error without saving. Confirmation, idempotency, and final payload logging remain for the voice integration phase.
-- Live-call blocker remains: the browser simulation exercises registration independently, but no Vapi credentials, phone number, or public endpoint are configured; real phone calls still cannot register patients.
+- Live-call blocker: the browser simulation exercises registration independently, but no Vapi credentials, phone number, or public endpoint are configured; real phone calls still cannot register patients.
+- Scope boundary: Vapi end-of-call reports are persisted in call logs; registration tool calls deliberately return an error without saving. Voice confirmation, idempotency, and registration writes remain pending.
 - Vapi documentation shows both `function.arguments` and simplified `name`/`parameters` tool-call shapes; the stub route accepts both. Confirm the shape of a real event before implementing writes.
 - Restart persistence of a retained patient has not yet been exercised as a separate integration test or real process restart. Do this before the live demo.
