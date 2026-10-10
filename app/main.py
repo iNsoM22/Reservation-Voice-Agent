@@ -20,6 +20,7 @@ from app.models.patient import Base
 from app.routes.dashboard import router as dashboard_router
 from app.routes.dashboard_auth import router as dashboard_auth_router
 from app.routes.dashboard_calls import router as dashboard_calls_router
+from app.routes.dashboard_simulation import router as dashboard_simulation_router
 from app.routes.errors import APIError, error_response
 from app.routes.patients import router as patient_router
 from app.routes.vapi import router as vapi_router
@@ -56,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(dashboard_auth_router)
     app.include_router(dashboard_router)
     app.include_router(dashboard_calls_router)
+    app.include_router(dashboard_simulation_router)
 
     @app.middleware("http")
     async def authenticate_vapi(request: Request, call_next):

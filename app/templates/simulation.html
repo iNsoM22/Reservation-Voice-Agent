@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Simulation{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><p class="eyebrow">Test the intake flow</p><h1>Call simulation</h1>
+  <p class="subheading">A browser based conversation that works independently of Vapi.</p></div>
+</section>
+<section class="simulation-panel" aria-label="Patient registration simulation">
+  <div class="simulation-status"><span class="simulation-dot"></span><span id="sim-status" role="status">Ready when you are</span></div>
+  <div id="sim-messages" class="simulation-messages" aria-live="polite"></div>
+  <div class="simulation-controls">
+    <button id="sim-start" class="button" type="button">Start simulation</button>
+    <button id="sim-resume" class="button secondary-button" type="button" hidden>Resume saved simulation</button>
+    <button id="sim-mic" class="button secondary-button" type="button" disabled>Speak</button>
+  </div>
+  <form id="sim-form" class="simulation-form" hidden>
+    <label for="sim-input">Your response</label>
+    <div><input id="sim-input" maxlength="500" autocomplete="off" required placeholder="Type a response"><button type="submit">Send</button></div>
+  </form>
+  <p class="simulation-note">Microphone recognition depends on browser support and permission. Some browsers send audio to a vendor service for recognition. Text entry works as a fallback. Spoken replies use your browser’s speech synthesis.</p>
+</section>
+<script>window.simulationCsrf = {{ csrf|tojson }};</script>
+<script src="/static/simulation.js" defer></script>
+{% endblock %}

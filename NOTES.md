@@ -8,6 +8,7 @@
 - Review pass: tightened update DTO limits and database constraints; 34 pytest tests pass, Ruff lint and format checks pass.
 - 2026-10-11: Added patient service, authenticated REST routes, settings, Vapi webhook adapter with inert call service, README, and pipeline report. SQLite is the local persistent default; PostgreSQL URLs are supported. 48 tests pass; Ruff lint and format checks pass.
 - Review fix: partial updates now advance `updated_at` even within one clock tick; database errors return a generic 500 without logging patient query values.
+- 2026-10-11: Added authenticated `/dashboard/simulation` using browser Web Speech APIs, text fallback, durable call-log state/transcript, per-field `PatientCreate` validation, correction/readback, explicit save confirmation, and repeat-confirm idempotence. The Vapi stub is unchanged. Tests and browser recognition limitations are documented in README.
 
 ## Decisions
 
@@ -31,5 +32,6 @@
 - Public URL blocker: no tunnel/domain is running; a Quick Tunnel URL is temporary and the local machine must remain online.
 - Financial limit: Vapi's free number still consumes call credits; after trial credits, live calls require payment. See `docs/PIPELINE_REPORT.md`.
 - Scope boundary: call service deliberately returns a Vapi tool error without saving. Confirmation, idempotency, and final payload logging remain for the voice integration phase.
+- Live-call blocker remains: the browser simulation exercises registration independently, but no Vapi credentials, phone number, or public endpoint are configured; real phone calls still cannot register patients.
 - Vapi documentation shows both `function.arguments` and simplified `name`/`parameters` tool-call shapes; the stub route accepts both. Confirm the shape of a real event before implementing writes.
 - Restart persistence of a retained patient has not yet been exercised as a separate integration test or real process restart. Do this before the live demo.
