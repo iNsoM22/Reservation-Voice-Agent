@@ -52,7 +52,8 @@ Reservation Voice Agent/
     models/test_patient.py
     routes/test_patients.py
     routes/test_vapi.py
-    services/test_patients.py  docs/
+    services/test_patients.py
+  docs/
     IMPLEMENTATION_PLAN.md
 ```
 

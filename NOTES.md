@@ -3,8 +3,9 @@
 ## Current state
 
 - 2026-10-10: Reviewed `../Context/voice_ai_agent_coding_challenge.md` and the UV starter project.
-- Planning complete in `docs/IMPLEMENTATION_PLAN.md`; application implementation has not started.
-- Current project has `pyproject.toml` and starter `main.py`. README, lockfile, tests, live phone number, and deployment are still pending.
+- Planning is in `docs/IMPLEMENTATION_PLAN.md`; patient models and DTO validation are now implemented.
+- UV dependencies and lockfile are present. README, API routes, voice integration, live phone number, and deployment are still pending.
+- Review pass: tightened update DTO limits and database constraints; 34 pytest tests pass, Ruff lint and format checks pass.
 
 ## Decisions
 
@@ -17,8 +18,8 @@
 ## Next actions
 
 1. Confirm Vapi number/tool access and hosting credentials are available.
-2. Define API and webhook examples, then write failing tests for validation and CRUD.
-3. Implement the core service and webhook through red-green-refactor cycles.
+2. Define API and webhook examples, then write failing tests for CRUD and Vapi contract behavior.
+3. Implement the service, routes, and webhook through red-green-refactor cycles.
 4. Deploy and verify two calls plus persistence after restart; document actual URLs and limitations in README.
 
 ## Open issues / changes
