@@ -6,15 +6,20 @@ from secrets import compare_digest
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import RedirectResponse
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config.settings import Settings
+from app.models import user  # noqa: F401 - register the users table with Base
 from app.models.patient import Base
+from app.routes.dashboard_auth import router as dashboard_auth_router
 from app.routes.errors import APIError, error_response
 from app.routes.patients import router as patient_router
 from app.routes.vapi import router as vapi_router
+from app.services.auth import bootstrap_admin
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +34,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         Base.metadata.create_all(engine)
+        with Session(engine) as session:
+            bootstrap_admin(session, settings.admin_email, settings.admin_password)
         yield
         engine.dispose()
 
@@ -37,6 +44,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = engine
     app.include_router(patient_router)
     app.include_router(vapi_router)
+    app.include_router(dashboard_auth_router)
 
     @app.middleware("http")
     async def authenticate_vapi(request: Request, call_next):
@@ -59,6 +67,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.exception_handler(StarletteHTTPException)
     async def handle_http_error(request: Request, exc: StarletteHTTPException):
+        if exc.status_code == 303 and exc.headers and "Location" in exc.headers:
+            return RedirectResponse(exc.headers["Location"], status_code=303)
         code = "not_found" if exc.status_code == 404 else "http_error"
         message = "Not found" if exc.status_code == 404 else str(exc.detail)
         return error_response(exc.status_code, code, message)
