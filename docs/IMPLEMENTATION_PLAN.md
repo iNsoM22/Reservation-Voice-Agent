@@ -4,7 +4,7 @@ Source: `../../Context/voice_ai_agent_coding_challenge.md`. This document is a p
 
 ## TL;DR
 
-Use **Vapi** for the U.S. phone number, speech, and conversational LLM; **Python 3.12 + FastAPI + Pydantic** for the API and Vapi tool webhook; **SQLAlchemy + PostgreSQL** for validated persistent records; **Railway** for the API and database; **uv + pytest + Ruff + FastAPI TestClient** for development and tests. Keep one backend service and one database. Configure the assistant and number in Vapi. SQLite can serve local tests, but the live deployment should use persistent PostgreSQL.
+Use **Vapi** for the U.S. phone number, speech, and conversational LLM; **Python 3.12 + FastAPI + Pydantic** for the API and Vapi tool webhook; **SQLAlchemy** for persistence; and **uv + pytest + Ruff** for development. For a temporary no-upfront-payment demo, run local SQLite behind a Cloudflare Quick Tunnel while Vapi trial credits last. For unattended hosting, use persistent PostgreSQL and a paid or otherwise reliable host. See `PIPELINE_REPORT.md` for costs and limitations.
 
 ## Components and feature map
 
@@ -65,7 +65,7 @@ Split any module as its responsibilities grow. Every source and test file must r
 2. **Plan:** Fix API contracts, schemas, state normalization, Vapi tool shape, hosting, and acceptance cases before writing production code.
 3. **Validate plan:** Check every mandatory challenge row against the feature map above; verify number availability, Vapi webhook response format, Railway persistence, and how reviewer access will work. Resolve gaps before coding.
 4. **TDD: data/API:** For each behavior, write a failing test, observe the expected failure, implement the minimum, rerun, and refactor. Cover validation boundaries, filters, partial update, soft delete, envelopes, restart persistence, and write failures.
-5. **TDD: voice integration:** Write contract tests with representative Vapi tool events and failures before implementing the adapter. Confirm tool idempotency and that saving cannot happen before explicit confirmation at the assistant level.
+5. **TDD: voice integration:** The authenticated Vapi route currently returns a tool error stub. Next, write contract tests for confirmed registration, retries, and write failures before replacing it. Confirm idempotency and that saving cannot happen before explicit confirmation at the assistant level.
 6. **End-to-end:** Deploy, configure number and tool, complete one real call, query the patient, restart the API, repeat the query, then make a correction/invalid-data call. Complete README with actual live details and limitations.
 
 ## Decisions and limits to confirm during implementation
