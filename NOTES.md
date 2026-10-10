@@ -9,6 +9,7 @@
 - Historical verification counts from earlier implementation stages: 34 and then 48 pytest tests passed at those points, with Ruff lint/format checks passing then. These are not current verification claims.
 - Review fixes include `updated_at` advancement for partial updates within one clock tick and generic database errors without logging patient query values.
 - 2026-10-11 dashboard polish covered call list/detail views, transcript wrapping, timestamp display, table/navigation semantics, pagination keyboard behavior, and login validation feedback.
+- Reliability review added conflict-safe admin bootstrap, turn sequence checks for simulation retries, and one transaction for simulation patient creation and call completion. The current full suite has 71 passing tests; Ruff checks pass.
 
 ## Decisions
 
@@ -31,7 +32,7 @@
 - Live-call blocker: no Vapi account, number, credits, or provider credentials supplied in the workspace.
 - Public URL blocker: no tunnel/domain is running; a Quick Tunnel URL is temporary and the local machine must remain online.
 - Financial limit: Vapi's free number still consumes call credits; after trial credits, live calls require payment. See `docs/PIPELINE_REPORT.md`.
-- Live-call blocker: the browser simulation exercises registration independently, but no Vapi credentials, phone number, or public endpoint are configured; real phone calls still cannot register patients.
+- The browser simulation exercises registration independently; real phone calls still cannot register patients until the Vapi registration tool and public call setup are completed.
 - Scope boundary: Vapi end-of-call reports are persisted in call logs; registration tool calls deliberately return an error without saving. Voice confirmation, idempotency, and registration writes remain pending.
 - Vapi documentation shows both `function.arguments` and simplified `name`/`parameters` tool-call shapes; the stub route accepts both. Confirm the shape of a real event before implementing writes.
 - Restart persistence of a retained patient has not yet been exercised as a separate integration test or real process restart. Do this before the live demo.
