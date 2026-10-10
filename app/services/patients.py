@@ -1,9 +1,11 @@
 """Patient business operations shared by the REST and future voice paths."""
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.patient import Patient, utc_now
@@ -44,6 +46,18 @@ class PatientService:
         return list(
             self.session.scalars(query.order_by(Patient.created_at, Patient.patient_id))
         )
+
+    def list_page(self, page: int, page_size: int = 10) -> tuple[list[Patient], int]:
+        query = select(Patient).where(Patient.deleted_at.is_(None))
+        total = (
+            self.session.scalar(select(func.count()).select_from(query.subquery())) or 0
+        )
+        patients = self.session.scalars(
+            query.order_by(Patient.created_at.desc(), Patient.patient_id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        return list(patients), total
 
     def update(self, patient_id: UUID, data: PatientUpdate) -> Patient | None:
         patient = self.get(patient_id)

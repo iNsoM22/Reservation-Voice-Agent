@@ -2,11 +2,13 @@
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from secrets import compare_digest
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -15,6 +17,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.config.settings import Settings
 from app.models import user  # noqa: F401 - register the users table with Base
 from app.models.patient import Base
+from app.routes.dashboard import router as dashboard_router
 from app.routes.dashboard_auth import router as dashboard_auth_router
 from app.routes.errors import APIError, error_response
 from app.routes.patients import router as patient_router
@@ -42,9 +45,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(lifespan=lifespan)
     app.state.settings = settings
     app.state.engine = engine
+    app.mount(
+        "/static",
+        StaticFiles(directory=Path(__file__).parent / "static"),
+        name="static",
+    )
     app.include_router(patient_router)
     app.include_router(vapi_router)
     app.include_router(dashboard_auth_router)
+    app.include_router(dashboard_router)
 
     @app.middleware("http")
     async def authenticate_vapi(request: Request, call_next):

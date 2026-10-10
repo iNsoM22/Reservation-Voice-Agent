@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Patients{% endblock %}
+{% block content %}
+<div class="heading-row"><div><p class="eyebrow">DIRECTORY</p><h1>Registered patients</h1><p class="subheading">Review and manage patient registration records.</p></div><span class="count-pill">{{ total }} {{ 'record' if total == 1 else 'records' }}</span></div>
+<section class="panel">
+  <div class="panel-heading"><div><h2>All patients</h2><p>Recently registered patients appear first.</p></div></div>
+  {% if patients %}
+  <div class="table-wrap"><table><thead><tr><th>Patient</th><th>Date of birth</th><th>Phone</th><th>Registered</th><th></th></tr></thead><tbody>
+  {% for patient in patients %}<tr><td><a class="patient-name" href="/dashboard/patients/{{ patient.patient_id }}">{{ patient.first_name }} {{ patient.last_name }}</a><span class="secondary">{{ patient.city }}, {{ patient.state }}</span></td><td>{{ patient.date_of_birth.strftime('%b %d, %Y') }}</td><td>{{ patient.phone_number }}</td><td>{{ patient.created_at.strftime('%b %d, %Y') }}</td><td><a class="view-link" href="/dashboard/patients/{{ patient.patient_id }}">View <span aria-hidden="true">→</span></a></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="empty-state"><div class="empty-icon">▦</div><h3>No patients yet</h3><p>Registered patients will appear here.</p></div>{% endif %}
+  <div class="pagination"><span>Page {{ page }} of {{ pages }}</span><div><a class="page-button {{ 'disabled' if page <= 1 else '' }}" href="/dashboard/patients?page={{ page - 1 if page > 1 else 1 }}" aria-label="Previous page">←</a><a class="page-button {{ 'disabled' if page >= pages else '' }}" href="/dashboard/patients?page={{ page + 1 if page < pages else pages }}" aria-label="Next page">→</a></div></div>
+</section>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ patient.first_name }} {{ patient.last_name }}{% endblock %}
+{% block content %}
+<a class="back-link" href="/dashboard/patients">← All patients</a>
+<div class="heading-row detail-heading"><div><p class="eyebrow">PATIENT RECORD</p><h1>{{ patient.first_name }} {{ patient.last_name }}</h1><p class="subheading">Registered {{ patient.created_at.strftime('%B %d, %Y') }}</p></div><span class="status-pill">Active</span></div>
+<section class="panel detail-panel"><div class="panel-heading"><div><h2>Personal information</h2><p>Patient demographic and contact details.</p></div></div><dl class="details">
+{% for label, value in [('Date of birth', patient.date_of_birth.strftime('%B %d, %Y')), ('Sex', patient.sex), ('Phone number', patient.phone_number), ('Email address', patient.email), ('Address', patient.address_line_1), ('Address line 2', patient.address_line_2), ('City', patient.city), ('State', patient.state), ('ZIP code', patient.zip_code), ('Insurance provider', patient.insurance_provider), ('Insurance member ID', patient.insurance_member_id), ('Preferred language', patient.preferred_language), ('Emergency contact', patient.emergency_contact_name), ('Emergency contact phone', patient.emergency_contact_phone)] %}<div><dt>{{ label }}</dt><dd>{{ value or '—' }}</dd></div>{% endfor %}
+</dl></section>
+{% endblock %}

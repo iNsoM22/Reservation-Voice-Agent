@@ -92,12 +92,17 @@ def login_page(request: Request):
         raise HTTPException(503, "Dashboard login is not configured")
     token = _signed(secret, secrets.token_urlsafe(32))
     response = HTMLResponse(
-        "<!doctype html><html lang='en'><meta charset='utf-8'><title>Admin login</title>"
-        "<main><h1>Patient dashboard</h1><form method='post'>"
+        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+        "<title>Sign in · Careline</title><link rel='stylesheet' href='/static/dashboard.css'>"
+        "</head><body class='login-page'><main class='login-card'>"
+        "<a class='brand login-brand' href='/dashboard/login'><span class='brand-mark'>C</span>Careline</a>"
+        "<p class='eyebrow'>ADMINISTRATION</p><h1>Welcome back</h1>"
+        "<p class='subheading'>Sign in to manage patient registrations.</p><form method='post'>"
         f"<input type='hidden' name='csrf_token' value='{escape(token)}'>"
-        "<label>Email <input name='email' type='email' required></label>"
-        "<label>Password <input name='password' type='password' required></label>"
-        "<button type='submit'>Sign in</button></form></main></html>"
+        "<label>Email address<input name='email' type='email' autocomplete='username' required></label>"
+        "<label>Password<input name='password' type='password' autocomplete='current-password' required></label>"
+        "<button type='submit'>Sign in</button></form></main></body></html>"
     )
     response.set_cookie(
         "dashboard_csrf",

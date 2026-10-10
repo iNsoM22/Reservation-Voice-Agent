@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Patient dashboard{% endblock %} · Careline</title>
+    <link rel="stylesheet" href="/static/dashboard.css">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/dashboard/patients"><span class="brand-mark">C</span><span>Careline<small>ADMINISTRATION</small></span></a>
+      <nav aria-label="Main navigation">
+        <a class="nav-link active" href="/dashboard/patients"><span>▦</span> Patients</a>
+        <a class="nav-link muted" href="#"><span>◷</span> Calls <small>Coming soon</small></a>
+        <a class="nav-link muted" href="#"><span>◇</span> Simulation <small>Coming soon</small></a>
+      </nav>
+      <div class="sidebar-bottom"><span class="avatar">A</span><span>Administrator<small>Workspace admin</small></span></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><span>Patient registration</span><form method="post" action="/dashboard/logout"><input type="hidden" name="csrf_token" value="{{ request.cookies.get('dashboard_csrf', '') }}"><button class="text-button" type="submit">Sign out</button></form></header>
+      <div class="content">{% block content %}{% endblock %}</div>
+    </main>
+  </body>
+</html>
