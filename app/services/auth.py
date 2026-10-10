@@ -5,6 +5,7 @@ import hmac
 import secrets
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -36,5 +37,11 @@ def bootstrap_admin(session: Session, email: str, password: str) -> bool:
     if session.scalar(select(User).where(User.email == email)):
         return False
     session.add(User(email=email, password_hash=hash_password(password), role="admin"))
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        if session.scalar(select(User).where(User.email == email)):
+            return False
+        raise
     return True
