@@ -58,6 +58,9 @@ def test_dashboard_requires_login_and_lists_latest_patient_first(tmp_path):
         assert page.text.index("Katherine Doe") < page.text.index("Grace Doe")
         assert page.text.index("Grace Doe") < page.text.index("Ada Doe")
         assert "Calls" in page.text and "Simulation" in page.text
+        assert 'aria-current="page"' in page.text
+        assert '<th scope="col">Patient</th>' in page.text
+        assert '<caption class="sr-only">Registered patients</caption>' in page.text
 
 
 def test_dashboard_paginates_and_patient_detail_hides_deleted(tmp_path):
@@ -86,6 +89,9 @@ def test_dashboard_paginates_and_patient_detail_hides_deleted(tmp_path):
         assert "PatientK Doe" in first.text
         assert "PatientA Doe" not in first.text
         assert "PatientA Doe" in second.text
+        assert 'aria-label="Previous page"' in second.text
+        assert 'class="page-button disabled" href=' not in first.text
+        assert 'class="page-button disabled" href=' not in second.text
         patient_id = first.text.split('href="/dashboard/patients/')[1].split('"')[0]
         detail = client.get(f"/dashboard/patients/{patient_id}")
         assert detail.status_code == 200

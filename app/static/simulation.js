@@ -8,6 +8,7 @@
   const micButton = document.querySelector("#sim-mic");
   const form = document.querySelector("#sim-form");
   const input = document.querySelector("#sim-input");
+  const sendButton = form.querySelector("button[type='submit']");
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition;
   let callId;
@@ -44,6 +45,14 @@
 
   startButton.addEventListener("click", async () => {
     startButton.disabled = true;
+    startButton.hidden = false;
+    startButton.textContent = "Start simulation";
+    resumeButton.hidden = true;
+    messages.replaceChildren();
+    form.hidden = true;
+    input.disabled = false;
+    sendButton.disabled = false;
+    callId = null;
     status.textContent = "Starting simulation…";
     try {
       const result = await request("/dashboard/simulation/calls", { method: "POST" });
@@ -80,9 +89,10 @@
     .catch((error) => { status.textContent = error.message; });
 
   async function submitTurn(text) {
-    if (!text.trim() || !callId) return;
+    if (!text.trim() || !callId || sendButton.disabled) return;
     input.value = "";
-    addMessage("user", text);
+    sendButton.disabled = true;
+    micButton.disabled = true;
     status.textContent = "Agent is responding…";
     try {
       const result = await request(`/dashboard/simulation/calls/${callId}/turn`, {
@@ -90,15 +100,25 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
+      addMessage("user", text);
       assistant(result.assistant);
       status.textContent = result.patient_id ? "Registration saved." : "Your turn.";
       if (result.patient_id) {
         micButton.disabled = true;
         input.disabled = true;
+        form.hidden = true;
+        startButton.hidden = false;
+        startButton.disabled = false;
+        startButton.textContent = "Start a new simulation";
+      } else {
+        sendButton.disabled = false;
+        micButton.disabled = !SpeechRecognition;
       }
     } catch (error) {
       status.textContent = error.message;
       input.value = text;
+      sendButton.disabled = false;
+      micButton.disabled = !SpeechRecognition;
       input.focus();
     }
   }

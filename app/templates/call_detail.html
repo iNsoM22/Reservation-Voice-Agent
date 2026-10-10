@@ -1,16 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Call details{% endblock %}
 {% block content %}
-<p><a href="/dashboard/calls">← Back to call logs</a></p>
-<section class="page-heading"><div><p class="eyebrow">{{ call_log.source }} call</p><h1>Call details</h1></div><span>{{ call_log.status }}</span></section>
-<dl class="details-grid">
-  <dt>Call ID</dt><dd>{{ call_log.call_id }}</dd>
-  <dt>Caller</dt><dd>{{ call_log.caller_number or 'Unknown' }}</dd>
-  <dt>Number called</dt><dd>{{ call_log.called_number or 'Unknown' }}</dd>
-  <dt>Started</dt><dd>{{ call_log.started_at or 'Unknown' }}</dd>
-  <dt>Ended</dt><dd>{{ call_log.ended_at or 'Unknown' }}</dd>
-  <dt>Patient ID</dt><dd>{{ call_log.patient_id or 'Not linked' }}</dd>
-</dl>
-<section><h2>Transcript</h2><pre class="transcript">{{ call_log.transcript or 'No transcript was provided.' }}</pre></section>
-<details><summary>Conversation messages</summary><pre class="transcript">{{ call_log.messages | tojson(indent=2) }}</pre></details>
+<a class="back-link" href="/dashboard/calls">← Back to call logs</a>
+<section class="heading-row detail-heading">
+  <div>
+    <p class="eyebrow">{{ call_log.source|upper }} CALL</p>
+    <h1>Call details</h1>
+    <p class="subheading">Started {{ (call_log.started_at or call_log.created_at).strftime('%B %d, %Y at %I:%M %p UTC') }}</p>
+  </div>
+  <span class="status-pill">{{ call_log.status|replace('_', ' ')|title }}</span>
+</section>
+<section class="panel detail-panel">
+  <div class="panel-heading"><div><h2>Call information</h2><p>Call metadata and registration link.</p></div></div>
+  <dl class="details">
+    {% for label, value in [('Call ID', call_log.call_id), ('Caller', call_log.caller_number or 'Unknown'), ('Number called', call_log.called_number or 'Unknown'), ('Ended', call_log.ended_at.strftime('%B %d, %Y at %I:%M %p UTC') if call_log.ended_at else 'Unknown'), ('Patient ID', call_log.patient_id or 'Not linked')] %}
+    <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+    {% endfor %}
+  </dl>
+</section>
+<section class="panel transcript-panel">
+  <div class="panel-heading"><div><h2>Transcript</h2><p>Conversation text captured for this call.</p></div></div>
+  <pre class="transcript">{{ call_log.transcript or 'No transcript was provided.' }}</pre>
+</section>
+<details class="panel message-details">
+  <summary>Conversation messages</summary>
+  <pre class="transcript">{{ call_log.messages | tojson(indent=2) }}</pre>
+</details>
 {% endblock %}

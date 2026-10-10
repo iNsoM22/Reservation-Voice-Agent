@@ -40,17 +40,19 @@ def test_login_requires_csrf_and_sets_httponly_session(tmp_path):
             ).status_code
             == 403
         )
-        assert (
-            browser.post(
-                "/dashboard/login",
-                data={
-                    "email": "admin@example.com",
-                    "password": "wrong",
-                    "csrf_token": token,
-                },
-            ).status_code
-            == 401
+        rejected = browser.post(
+            "/dashboard/login",
+            data={
+                "email": "admin@example.com",
+                "password": "wrong",
+                "csrf_token": token,
+            },
         )
+        assert rejected.status_code == 401
+        assert "text/html" in rejected.headers["content-type"]
+        assert 'role="alert"' in rejected.text
+        assert "Invalid email or password" in rejected.text
+        assert "wrong" not in rejected.text
         result = browser.post(
             "/dashboard/login",
             data={

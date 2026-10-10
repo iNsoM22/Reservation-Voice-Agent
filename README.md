@@ -35,7 +35,7 @@ Do not commit `.env` or `patients.db`. Use synthetic patient data only.
 
 Run `uv run python -m scripts.create_admin` after setting the admin values to create the account. The command refuses to overwrite an existing administrator.
 
-The app creates the patient table at startup. For a long-lived deployment, add migrations before changing the schema.
+The app creates all model tables at startup, including patients, users, and call logs. For a long-lived deployment, add migrations before changing the schema.
 
 ## API
 
@@ -64,7 +64,7 @@ Invoke-RestMethod http://localhost:8000/patients -Headers $headers
 
 ## Architecture and tests
 
-`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. The browser simulation uses native Web Speech APIs and `PatientCreate`/`PatientService`, and saves only after a readback and explicit confirmation. Speech recognition is not supported in every browser and some browser implementations use a vendor service to process audio; it is not guaranteed to run locally or offline. Text entry remains available. The Vapi tool endpoint is separate and still does not register patients.
+`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. Vapi reports and browser simulation transcripts are stored in the call log table and are visible in the dashboard. The browser simulation uses native Web Speech APIs and `PatientCreate`/`PatientService`, and saves only after a readback and explicit confirmation. Speech recognition is not supported in every browser and some browser implementations use a vendor service to process audio; it is not guaranteed to run locally or offline. Text entry remains available. Vapi registration and final-payload logging are not configured; the Vapi tool endpoint remains a stub and does not register patients.
 
 ```powershell
 uv run python -m pytest -q
@@ -78,5 +78,5 @@ uv run ruff format --check .
 - A Vapi free number does not make calls free indefinitely. Check current credits and billing before a live review.
 - Local SQLite persists across app restarts, but the app and tunnel must stay online. A Quick Tunnel has a temporary hostname and no uptime guarantee.
 - Patient API uses a shared API key. This is assessment-grade access control, not a production healthcare identity model.
-- The challenge requests final payload logs; logging patient demographics is intentionally deferred until synthetic-data handling and retention are defined.
+- Vapi registration and final-payload logging are unconfigured; the webhook remains a stub. Vapi reports and browser simulation transcripts are stored and viewable in the dashboard.
 - Live phone number: **not provisioned**. Live API URL: **not deployed**. Add both here before submission.

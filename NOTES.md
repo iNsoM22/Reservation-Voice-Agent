@@ -9,6 +9,7 @@
 - 2026-10-11: Added patient service, authenticated REST routes, settings, Vapi webhook adapter with inert call service, README, and pipeline report. SQLite is the local persistent default; PostgreSQL URLs are supported. 48 tests pass; Ruff lint and format checks pass.
 - Review fix: partial updates now advance `updated_at` even within one clock tick; database errors return a generic 500 without logging patient query values.
 - 2026-10-11: Added authenticated `/dashboard/simulation` using browser Web Speech APIs, text fallback, durable call-log state/transcript, per-field `PatientCreate` validation, correction/readback, explicit save confirmation, and repeat-confirm idempotence. The Vapi stub is unchanged. Tests and browser recognition limitations are documented in README.
+- 2026-10-11: Polished dashboard call list/detail views, transcript wrapping, timestamp display, table and navigation semantics, pagination keyboard behavior, and login validation feedback. Simulation now offers a new session after saving and keeps failed turns out of the visible transcript until accepted. Vapi reports and simulation transcripts are stored; Vapi registration and final-payload logging remain unconfigured.
 
 ## Decisions
 

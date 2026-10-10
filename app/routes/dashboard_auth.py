@@ -91,6 +91,18 @@ def login_page(request: Request):
     if not secret:
         raise HTTPException(503, "Dashboard login is not configured")
     token = _signed(secret, secrets.token_urlsafe(32))
+    return _login_response(request, token)
+
+
+def _login_response(
+    request: Request, token: str, error: bool = False, status_code: int = 200
+) -> HTMLResponse:
+    message = (
+        '<p id="login-error" class="form-error" role="alert">Invalid email or password.</p>'
+        if error
+        else ""
+    )
+    described_by = " aria-describedby='login-error'" if error else ""
     response = HTMLResponse(
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width, initial-scale=1'>"
@@ -100,9 +112,11 @@ def login_page(request: Request):
         "<p class='eyebrow'>ADMINISTRATION</p><h1>Welcome back</h1>"
         "<p class='subheading'>Sign in to manage patient registrations.</p><form method='post'>"
         f"<input type='hidden' name='csrf_token' value='{escape(token)}'>"
+        f"{message}"
         "<label>Email address<input name='email' type='email' autocomplete='username' required></label>"
-        "<label>Password<input name='password' type='password' autocomplete='current-password' required></label>"
-        "<button type='submit'>Sign in</button></form></main></body></html>"
+        f"<label>Password<input name='password' type='password' autocomplete='current-password' required{described_by}></label>"
+        "<button type='submit'>Sign in</button></form></main></body></html>",
+        status_code=status_code,
     )
     response.set_cookie(
         "dashboard_csrf",
@@ -127,7 +141,9 @@ async def login(request: Request):
             or user.role != "admin"
             or not verify_password(fields.get("password", ""), user.password_hash)
         ):
-            raise HTTPException(401, "Invalid email or password")
+            return _login_response(
+                request, csrf_token(request), error=True, status_code=401
+            )
         identifier = user.user_id
     secret = request.app.state.settings.dashboard_session_secret
     token = _signed(secret, f"{identifier}:{int(time.time()) + SESSION_SECONDS}")

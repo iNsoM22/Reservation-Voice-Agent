@@ -55,10 +55,17 @@ def test_call_log_pages_require_login_and_show_conversation(tmp_path):
         assert listing.status_code == 200
         assert "Call logs" in listing.text
         assert 'href="/dashboard/calls" aria-label="Calls"' in listing.text
-        assert 'class="nav-link active"' in listing.text
+        assert (
+            'class="nav-link active" href="/dashboard/calls" aria-label="Calls" aria-current="page"'
+            in listing.text
+        )
+        assert '<caption class="sr-only">Recorded calls</caption>' in listing.text
+        assert '<th scope="col">Conversation</th>' in listing.text
         assert "sim-html" not in listing.text
         detail = client.get(f"/dashboard/calls/{identifier}")
         assert detail.status_code == 200
+        assert 'class="details"' in detail.text
+        assert 'class="transcript"' in detail.text
         assert "Caller: &lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;" in detail.text
         assert "Conversation messages" in detail.text
 
