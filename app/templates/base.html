@@ -10,9 +10,9 @@
     <aside class="sidebar">
       <a class="brand" href="/dashboard/patients"><span class="brand-mark">C</span><span>Careline<small>ADMINISTRATION</small></span></a>
       <nav aria-label="Main navigation">
-        <a class="nav-link active" href="/dashboard/patients"><span>▦</span> Patients</a>
-        <a class="nav-link muted" href="#"><span>◷</span> Calls <small>Coming soon</small></a>
-        <a class="nav-link muted" href="#"><span>◇</span> Simulation <small>Coming soon</small></a>
+        <a class="nav-link {{ 'active' if request.url.path.startswith('/dashboard/patients') else '' }}" href="/dashboard/patients" aria-label="Patients"><span aria-hidden="true">&#x25A6;</span><span class="nav-label">Patients</span></a>
+        <a class="nav-link {{ 'active' if request.url.path.startswith('/dashboard/calls') else '' }}" href="/dashboard/calls" aria-label="Calls"><span aria-hidden="true">&#x25F7;</span><span class="nav-label">Calls</span></a>
+        <a class="nav-link muted" href="#" aria-label="Simulation"><span aria-hidden="true">&#x25C7;</span><span class="nav-label">Simulation</span><small>Coming soon</small></a>
       </nav>
       <div class="sidebar-bottom"><span class="avatar">A</span><span>Administrator<small>Workspace admin</small></span></div>
     </aside>

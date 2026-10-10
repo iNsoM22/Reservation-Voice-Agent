@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Call logs{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><p class="eyebrow">Activity</p><h1>Call logs</h1></div>
+  <p>{{ total }} call{{ '' if total == 1 else 's' }}</p>
+</section>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>Started</th><th>Caller</th><th>Status</th><th>Source</th><th>Conversation</th></tr></thead>
+    <tbody>
+    {% for call in call_logs %}
+      <tr>
+        <td><a href="/dashboard/calls/{{ call.call_log_id }}">{{ call.started_at or call.created_at }}</a></td>
+        <td>{{ call.caller_number or 'Unknown' }}</td>
+        <td>{{ call.status }}</td>
+        <td>{{ call.source }}</td>
+        <td>{{ call.transcript[:120] or 'No transcript available' }}{% if call.transcript|length > 120 %}…{% endif %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty-state">No calls have been recorded.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<nav class="pagination" aria-label="Call log pages">
+  {% if page > 1 %}<a href="?page={{ page - 1 }}">Previous</a>{% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a href="?page={{ page + 1 }}">Next</a>{% endif %}
+</nav>
+{% endblock %}

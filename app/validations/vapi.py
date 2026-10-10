@@ -1,8 +1,10 @@
 """Only the Vapi event fields used by the current webhook stub."""
 
+import json
+from datetime import datetime
 from typing import Any, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class ToolFunction(BaseModel):
@@ -34,7 +36,47 @@ class ToolCall(BaseModel):
 class VapiMessage(BaseModel):
     type: str = Field(min_length=1)
     tool_call_list: list[ToolCall] = Field(default_factory=list, alias="toolCallList")
+    call: "CallReportCall | None" = None
+    ended_reason: str | None = Field(default=None, alias="endedReason", max_length=100)
+    artifact: "CallReportArtifact | None" = None
+
+    @model_validator(mode="after")
+    def require_report_call(self) -> Self:
+        if self.type == "end-of-call-report" and self.call is None:
+            raise ValueError("Call details are required for end-of-call reports")
+        return self
 
 
 class VapiEvent(BaseModel):
     message: VapiMessage
+
+
+class CallParty(BaseModel):
+    number: str | None = Field(default=None, max_length=100)
+
+
+class CallReportCall(BaseModel):
+    id: str = Field(min_length=1, max_length=255)
+    started_at: datetime | None = Field(default=None, alias="startedAt")
+    ended_at: datetime | None = Field(default=None, alias="endedAt")
+    customer: CallParty = Field(default_factory=CallParty)
+    phone_number: CallParty = Field(default_factory=CallParty, alias="phoneNumber")
+
+    @field_validator("started_at", "ended_at")
+    @classmethod
+    def require_timezone(cls, value: datetime | None) -> datetime | None:
+        if value is not None and value.tzinfo is None:
+            raise ValueError("Call timestamps must include a timezone")
+        return value
+
+
+class CallReportArtifact(BaseModel):
+    transcript: str = Field(default="", max_length=200_000)
+    messages: list[dict[str, Any]] = Field(default_factory=list, max_length=2_000)
+
+    @field_validator("messages")
+    @classmethod
+    def bound_message_size(cls, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if len(json.dumps(messages, ensure_ascii=False).encode()) > 1_000_000:
+            raise ValueError("Conversation messages are too large")
+        return messages

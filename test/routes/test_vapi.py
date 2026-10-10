@@ -123,3 +123,56 @@ def test_call_webhook_authenticates_before_parsing_malformed_json(tmp_path):
         )
         assert response.status_code == 401
         assert response.json()["error"]["code"] == "unauthorized"
+
+
+def test_authenticated_end_of_call_report_is_saved_idempotently(tmp_path):
+    event = {
+        "message": {
+            "type": "end-of-call-report",
+            "call": {
+                "id": "vapi-report-1",
+                "startedAt": "2026-10-11T10:00:00Z",
+                "endedAt": "2026-10-11T10:01:00Z",
+                "customer": {"number": "+14155550100"},
+            },
+            "endedReason": "customer-ended-call",
+            "artifact": {
+                "transcript": "Assistant: Hello\nUser: My name is Jane.",
+                "messages": [{"role": "assistant", "message": "Hello"}],
+            },
+        }
+    }
+    with make_client(tmp_path) as client:
+        headers = {"Authorization": "Bearer test-vapi-token"}
+        assert client.post("/calls/vapi", json=event).status_code == 401
+        assert client.post("/calls/vapi", json=event, headers=headers).json() == {}
+        assert client.post("/calls/vapi", json=event, headers=headers).json() == {}
+        # Access the durable rows through the logged in dashboard below once registered.
+        from sqlalchemy import select
+        from sqlalchemy.orm import Session
+
+        from app.models.call_log import CallLog
+
+        with Session(client.app.state.engine) as session:
+            rows = list(session.scalars(select(CallLog)))
+        assert len(rows) == 1
+        assert rows[0].transcript.endswith("My name is Jane.")
+        assert rows[0].messages[0]["message"] == "Hello"
+        assert rows[0].patient_id is None
+
+
+def test_end_of_call_report_rejects_oversized_transcript(tmp_path):
+    event = {
+        "message": {
+            "type": "end-of-call-report",
+            "call": {"id": "vapi-large"},
+            "artifact": {"transcript": "x" * 200_001},
+        }
+    }
+    with make_client(tmp_path) as client:
+        response = client.post(
+            "/calls/vapi",
+            json=event,
+            headers={"Authorization": "Bearer test-vapi-token"},
+        )
+        assert response.status_code == 422
