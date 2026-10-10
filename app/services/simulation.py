@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from pydantic import ValidationError
 from sqlalchemy import select, update
+from sqlalchemy import text as sql_text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
@@ -40,7 +41,12 @@ class SimulationService:
     def start(self) -> dict[str, Any]:
         call_id = f"sim:{self.user_id}:{uuid4()}"
         now = datetime.now(UTC)
-        state = {"owner": str(self.user_id), "values": {}, "stage": "intake"}
+        state = {
+            "owner": str(self.user_id),
+            "values": {},
+            "stage": "intake",
+            "sequence": 0,
+        }
         messages = [
             {"role": "system", "state": state},
             {"role": "assistant", "message": _prompt(0)},
@@ -57,6 +63,7 @@ class SimulationService:
             "call_id": call_id,
             "assistant": messages[-1]["message"],
             "patient_id": None,
+            "sequence": 0,
         }
 
     def current(self) -> dict[str, Any]:
@@ -66,7 +73,7 @@ class SimulationService:
                 .where(
                     CallLog.call_id.like(f"sim:{self.user_id}:%"),
                     CallLog.source == "simulation",
-                    CallLog.status.in_(["in_progress", "saving"]),
+                    CallLog.status == "in_progress",
                 )
                 .order_by(CallLog.started_at.desc())
             )
@@ -79,10 +86,13 @@ class SimulationService:
                     for item in call.messages
                     if item.get("role") in {"user", "assistant"}
                 ],
+                "sequence": call.messages[0]["state"].get("sequence", 0),
             }
 
-    def turn(self, call_id: str, text: str) -> dict[str, Any]:
+    def turn(self, call_id: str, text: str, sequence: int) -> dict[str, Any]:
         with Session(self.engine) as session:
+            if self.engine.dialect.name == "sqlite":
+                session.execute(sql_text("BEGIN IMMEDIATE"))
             logs = CallLogService(session)
             call = logs.get(call_id)
             if call is None or not call_id.startswith(f"sim:{self.user_id}:"):
@@ -91,13 +101,32 @@ class SimulationService:
             state = dict(messages[0]["state"])
             if state.get("owner") != str(self.user_id):
                 raise SimulationNotFound
+            current_sequence = state.get("sequence", 0)
             if state["stage"] == "complete":
-                return {
-                    "assistant": "This registration is already complete.",
-                    "patient_id": str(call.patient_id),
-                }
+                return _turn_result(call, current_sequence)
+            if sequence != current_sequence:
+                return _turn_result(call, current_sequence)
             utterance = text.strip()
             messages.append({"role": "user", "message": utterance})
+            state["sequence"] = current_sequence + 1
+            messages[0]["state"] = state
+            claim = session.execute(
+                update(CallLog)
+                .where(
+                    CallLog.call_id == call_id,
+                    CallLog.status == "in_progress",
+                    CallLog.transcript == call.transcript,
+                )
+                .values(transcript=_transcript(messages))
+            )
+            if claim.rowcount != 1:
+                session.rollback()
+                latest = logs.get(call_id)
+                if latest is None:
+                    raise SimulationNotFound
+                return _turn_result(
+                    latest, latest.messages[0]["state"].get("sequence", 0)
+                )
             if state["stage"] == "confirm":
                 return self._confirmation(
                     utterance, call_id, call.started_at, state, messages, logs, session
@@ -109,37 +138,10 @@ class SimulationService:
     def _confirmation(
         self, utterance, call_id, started_at, state, messages, logs, session
     ):
-        if _is_confirmation(utterance):
-            claim = session.execute(
-                update(CallLog)
-                .where(CallLog.call_id == call_id, CallLog.status == "in_progress")
-                .values(status="saving")
-            )
-            session.commit()
-            if claim.rowcount != 1:
-                session.expire_all()
-                latest = logs.get(call_id)
-                if latest and latest.status == "ended":
-                    return {
-                        "assistant": "This registration is already complete.",
-                        "patient_id": str(latest.patient_id),
-                    }
-                return {
-                    "assistant": "Your registration is being saved. Please wait a moment.",
-                    "patient_id": None,
-                }
         try:
             answer, patient_id = _confirm(utterance, state, session)
         except Exception:
             session.rollback()
-            if _is_confirmation(utterance):
-                logs.log_simulation(
-                    call_id,
-                    _transcript(messages[:-1]),
-                    messages[:-1],
-                    status="in_progress",
-                    started_at=started_at,
-                )
             raise
         messages.append({"role": "assistant", "message": answer})
         messages[0]["state"] = state
@@ -155,6 +157,7 @@ class SimulationService:
         return {
             "assistant": answer,
             "patient_id": str(patient_id) if patient_id else None,
+            "sequence": state["sequence"],
         }
 
     def _intake(self, utterance, call_id, started_at, state, messages, logs):
@@ -182,7 +185,11 @@ class SimulationService:
             status="in_progress",
             started_at=started_at,
         )
-        return {"assistant": answer, "patient_id": None}
+        return {
+            "assistant": answer,
+            "patient_id": None,
+            "sequence": state["sequence"],
+        }
 
 
 def _prompt(index: int) -> str:
@@ -247,7 +254,7 @@ def _is_confirmation(text: str) -> bool:
 def _confirm(text: str, state: dict[str, Any], session: Session):
     if _is_confirmation(text):
         patient = PatientService(session).create(
-            PatientCreate.model_validate(state["values"])
+            PatientCreate.model_validate(state["values"]), commit=False
         )
         state["stage"] = "complete"
         return f"You're all set, {patient.first_name}.", patient.patient_id
@@ -287,3 +294,22 @@ def _transcript(messages: list[dict[str, Any]]) -> str:
         for item in messages
         if item.get("role") in {"user", "assistant"}
     )
+
+
+def _turn_result(call: CallLog, sequence: int) -> dict[str, Any]:
+    assistant = next(
+        (
+            item["message"]
+            for item in reversed(call.messages)
+            if item.get("role") == "assistant"
+        ),
+        "This registration is already complete.",
+    )
+    return {
+        "assistant": assistant,
+        "patient_id": str(call.patient_id) if call.patient_id else None,
+        "sequence": sequence,
+        "messages": [
+            item for item in call.messages if item.get("role") in {"user", "assistant"}
+        ],
+    }

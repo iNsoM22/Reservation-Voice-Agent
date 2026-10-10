@@ -46,8 +46,11 @@ async def simulation_turn(request: Request, call_id: str):
     text = payload.get("text") if isinstance(payload, dict) else None
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT:
         raise HTTPException(422, f"Enter 1 to {MAX_TEXT} characters")
+    sequence = payload.get("sequence") if isinstance(payload, dict) else None
+    if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
+        raise HTTPException(422, "A valid simulation sequence is required")
     try:
-        return _service(request, user.user_id).turn(call_id, text)
+        return _service(request, user.user_id).turn(call_id, text, sequence)
     except SimulationNotFound as exc:
         raise HTTPException(404, "Simulation not found") from exc
 

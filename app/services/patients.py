@@ -16,10 +16,13 @@ class PatientService:
     def __init__(self, session: Session):
         self.session = session
 
-    def create(self, data: PatientCreate) -> Patient:
+    def create(self, data: PatientCreate, *, commit: bool = True) -> Patient:
         patient = Patient(**data.model_dump())
         self.session.add(patient)
-        self._commit(patient)
+        if commit:
+            self._commit(patient)
+        else:
+            self.session.flush()
         return patient
 
     def get(self, patient_id: UUID) -> Patient | None:

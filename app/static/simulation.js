@@ -12,6 +12,7 @@
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition;
   let callId;
+  let sequence = 0;
 
   function addMessage(role, text) {
     const item = document.createElement("p");
@@ -57,6 +58,7 @@
     try {
       const result = await request("/dashboard/simulation/calls", { method: "POST" });
       callId = result.call_id;
+      sequence = result.sequence;
       form.hidden = false;
       micButton.disabled = !SpeechRecognition;
       status.textContent = SpeechRecognition ? "Ready. Choose Speak or type a response." : "Speech recognition is unavailable. Type your responses.";
@@ -81,6 +83,7 @@
     .then((current) => {
       if (!current.call_id) return;
       callId = current.call_id;
+      sequence = current.sequence;
       current.messages.forEach((message) => addMessage(message.role, message.message));
       startButton.hidden = true;
       resumeButton.hidden = false;
@@ -98,10 +101,16 @@
       const result = await request(`/dashboard/simulation/calls/${callId}/turn`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, sequence }),
       });
-      addMessage("user", text);
-      assistant(result.assistant);
+      sequence = result.sequence;
+      if (result.messages) {
+        messages.replaceChildren();
+        result.messages.forEach((message) => addMessage(message.role, message.message));
+      } else {
+        addMessage("user", text);
+        assistant(result.assistant);
+      }
       status.textContent = result.patient_id ? "Registration saved." : "Your turn.";
       if (result.patient_id) {
         micButton.disabled = true;
