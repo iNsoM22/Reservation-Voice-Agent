@@ -196,6 +196,20 @@ td { padding: 16px 21px; border-top: 1px solid #eff2f0; color: #43534a; font-siz
 .form-error { margin: 0; padding: 10px 12px; border-radius: 5px; background: #fff1ef; color: #8a2d24; font-size: 13px; line-height: 1.5; }
 
 .simulation-panel { max-width: 800px; padding: 24px; border: 1px solid #e2e9e5; border-radius: 9px; background: #fff; box-shadow: 0 2px 7px #17362b08; }
+.simulation-intro h2 { margin: 0; color: #26352e; font-size: 17px; }
+.simulation-intro p { margin: 8px 0 22px; color: #5f6e66; font-size: 13px; line-height: 1.6; }
+.simulation-number-form { padding: 20px; border: 1px solid #dce9e2; border-radius: 8px; background: #f7faf8; }
+.simulation-number-form label { display: block; margin-bottom: 9px; color: #26352e; font-size: 13px; font-weight: 650; }
+.simulation-number-form label span { margin-left: 5px; color: #718078; font-size: 12px; font-weight: 400; }
+.simulation-number-row { display: flex; gap: 10px; }
+.simulation-number-row input { flex: 1; min-width: 0; height: 42px; padding: 0 12px; border: 1px solid #cedbd2; border-radius: 6px; background: #fff; color: #26352e; font: inherit; font-size: 14px; }
+.simulation-number-row button { min-height: 42px; padding: 0 18px; border: 0; border-radius: 6px; background: #176b55; color: #fff; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.simulation-number-row button:hover { background: #125a47; }
+.simulation-number-row button:disabled { opacity: .65; cursor: wait; }
+.simulation-status { margin: 12px 0 0; color: #315b4b; font-size: 12px; line-height: 1.5; }
+.simulation-status:empty { display: none; }
+.simulation-change-number { margin-top: 14px; padding: 0; border: 0; background: none; color: #176b55; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.simulation-change-number[hidden] { display: none; }
 .simulation-note { margin: 18px 0 0; color: #5f6e66; font-size: 12px; line-height: 1.6; }
 
 @media (max-width: 800px) {
@@ -212,5 +226,6 @@ td { padding: 16px 21px; border-top: 1px solid #eff2f0; color: #43534a; font-siz
 }
 @media (max-width: 520px) {
   .simulation-panel { padding: 16px; }
+  .simulation-number-row { flex-direction: column; }
   .login-card { padding: 28px 22px; }
 }

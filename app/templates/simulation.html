@@ -10,19 +10,24 @@
 </section>
 <section class="simulation-panel" aria-label="Browser voice test">
   {% if vapi_public_key and vapi_assistant_id %}
-    <p>Set a test caller number, then allow microphone access and start a voice conversation. Use synthetic patient data.</p>
-    <form id="simulation-number-form">
-      <label for="simulation-phone">Test caller phone number</label>
-      <input id="simulation-phone" name="phone_number" type="tel" autocomplete="tel" placeholder="4155550100" required>
-      <button type="submit">Set caller number</button>
-      <p id="simulation-number-status" role="status"></p>
+    <div class="simulation-intro">
+      <h2>Start a browser call</h2>
+      <p>Choose the number this test call should appear to come from. Use synthetic patient data.</p>
+    </div>
+    <form id="simulation-number-form" class="simulation-number-form">
+      <label for="simulation-phone">Caller phone number <span>10-digit US number</span></label>
+      <div class="simulation-number-row">
+        <input id="simulation-phone" name="phone_number" type="tel" inputmode="tel" autocomplete="tel" placeholder="(415) 555-0100" required>
+        <button type="submit">Continue to voice test</button>
+      </div>
+      <p id="simulation-number-status" class="simulation-status" role="status" aria-live="polite"></p>
     </form>
+    <button id="simulation-change-number" class="simulation-change-number" type="button" hidden>Use a different number</button>
     <input id="simulation-csrf" type="hidden" value="{{ csrf_token }}">
     <template id="simulation-widget-template"><vapi-widget public-key="{{ vapi_public_key }}" assistant-id="{{ vapi_assistant_id }}" mode="voice" theme="light" size="compact" start-button-text="Start voice test" end-button-text="End voice test"></vapi-widget></template>
-    <div id="simulation-widget"></div>
+    <div id="simulation-widget" class="simulation-widget"></div>
     <p class="simulation-note">The test number is used for registration and lookup in browser calls. Phone calls still use their actual caller number.</p>
     <script src="/static/scripts/simulation-caller.js" defer></script>
-    <script src="https://unpkg.com/@vapi-ai/client-sdk-react@0.1.1/dist/embed/widget.umd.js" async type="text/javascript"></script>
   {% else %}
     <p>Browser voice is not configured. Set <code>VAPI_PUBLIC_KEY</code> and <code>VAPI_ASSISTANT_ID</code>, then restart the application.</p>
   {% endif %}

@@ -2,6 +2,11 @@
 
 ## Current state (2026-10-12)
 
+- Browser simulation now inserts the signed widget first and loads Vapi's embed
+  script afterward. Previously the script loaded before the widget was added,
+  leaving the caller number set without a visible voice control. The number
+  form now gives a clear ready state and an option to reload for another number.
+  Live widget rendering still needs verification on the deployed page.
 - The owner reports that the app is deployed on Heroku and the assistant is
   configured in Vapi. This workspace does not contain the live app URL, phone
   number, Vapi provider selections, or deployed config values, so those details
