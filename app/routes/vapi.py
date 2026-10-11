@@ -1,4 +1,4 @@
-"""Authenticated Vapi server URL endpoint with inert registration behavior."""
+"""Authenticated Vapi server URL endpoint."""
 
 from fastapi import APIRouter, Request
 from sqlalchemy.orm import Session
@@ -25,17 +25,34 @@ def vapi_webhook(
         return {}
     if not event.message.tool_call_list:
         raise APIError(422, "invalid_event", "Tool call list is required")
-    service = CallService()
-    return {
-        "results": [
-            {
-                "toolCallId": call.id,
-                "error": (
-                    service.register_patient(call.arguments)
-                    if call.tool_name == "register_patient"
-                    else f"Unsupported tool: {call.tool_name}"
-                ),
-            }
-            for call in event.message.tool_call_list
-        ]
-    }
+    with Session(request.app.state.engine) as session:
+        service = CallService(session)
+        return {
+            "results": [
+                {
+                    "toolCallId": call.id,
+                    **(
+                        service.register_patient(
+                            event.message.call.id if event.message.call else None,
+                            call.arguments,
+                            event.message.artifact.messages
+                            if event.message.artifact
+                            else [],
+                        )
+                        if call.tool_name == "register_patient"
+                        else service.lookup_patient(
+                            event.message.call.customer.number
+                            if event.message.call
+                            else None,
+                            call.arguments,
+                            call_type=event.message.call.type
+                            if event.message.call
+                            else None,
+                        )
+                        if call.tool_name == "lookup_patient"
+                        else {"error": f"Unsupported tool: {call.tool_name}"}
+                    ),
+                }
+                for call in event.message.tool_call_list
+            ]
+        }

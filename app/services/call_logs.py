@@ -79,6 +79,8 @@ class CallLogService:
             self.session.add(call_log)
         else:
             for key, value in values.items():
+                if key in {"transcript", "messages"} and not value:
+                    continue
                 setattr(call_log, key, value)
         try:
             self.session.commit()

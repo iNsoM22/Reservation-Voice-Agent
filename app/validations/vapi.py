@@ -1,4 +1,4 @@
-"""Only the Vapi event fields used by the current webhook stub."""
+"""Vapi webhook event fields used by registration, lookup, and call reports."""
 
 import json
 from datetime import datetime
@@ -57,6 +57,7 @@ class CallParty(BaseModel):
 
 class CallReportCall(BaseModel):
     id: str = Field(min_length=1, max_length=255)
+    type: str | None = None
     started_at: datetime | None = Field(default=None, alias="startedAt")
     ended_at: datetime | None = Field(default=None, alias="endedAt")
     customer: CallParty = Field(default_factory=CallParty)

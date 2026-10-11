@@ -1,6 +1,6 @@
 # Patient Registration Voice Agent
 
-Python backend for a patient-registration voice-agent assessment. The patient REST API, admin dashboard, and provider-independent browser simulation work locally. The Vapi call webhook remains a stub and does **not** register callers. No phone number or deployment is configured yet.
+Python backend for a patient-registration voice-agent assessment. The patient REST API, admin dashboard, and authenticated Vapi registration webhook work locally. The dashboard simulation needs rework before project completion. No phone number or deployment is configured yet.
 
 ## TL;DR
 
@@ -19,6 +19,8 @@ uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 For a public tunnel, use `cloudflared tunnel --url http://localhost:8000` in another terminal after installing `cloudflared`. The tunnel URL changes when restarted. Keep the app and tunnel running during evaluation.
+
+To connect a real phone, follow [Vapi live-call setup](docs/VAPI_SETUP.md). The Vapi account, public URL, assistant, and number must be supplied in that dashboard. The backend cannot provision them without provider access.
 
 Do not commit `.env` or `patients.db`. Use synthetic patient data only.
 
@@ -49,7 +51,7 @@ Success responses use `{ "data": ..., "error": null }`. Error responses use `{ "
 | `POST` | `/patients` | Create a patient; required fields follow the challenge data model. |
 | `PUT` | `/patients/{id}` | Update only supplied fields. |
 | `DELETE` | `/patients/{id}` | Soft delete a patient. |
-| `POST` | `/calls/vapi` | Authenticated Vapi event endpoint; registration tool is currently a stub. |
+| `POST` | `/calls/vapi` | Authenticated Vapi webhook for confirmed registration, caller-bound lookup, and end-of-call reports. |
 | `GET` | `/dashboard/login` | Dashboard sign-in page. |
 | `GET` | `/dashboard/patients`, `/dashboard/calls` | Authenticated patient and call-log pages. |
 | `GET` | `/dashboard/simulation` | Authenticated browser call simulation. |
@@ -64,7 +66,9 @@ Invoke-RestMethod http://localhost:8000/patients -Headers $headers
 
 ## Architecture and tests
 
-`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. Vapi reports and browser simulation transcripts are stored in the call log table and are visible in the dashboard. The browser simulation uses native Web Speech APIs and `PatientCreate`/`PatientService`, and saves only after a readback and explicit confirmation. Speech recognition is not supported in every browser and some browser implementations use a vendor service to process audio; it is not guaranteed to run locally or offline. Text entry remains available. Vapi registration and final-payload logging are not configured; the Vapi tool endpoint remains a stub and does not register patients.
+`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. Vapi registration and REST share `PatientCreate` and `PatientService`. The voice webhook checks the call transcript for a matching readback and explicit confirmation, then saves the patient and call link in one transaction. Replayed calls return the existing result. Vapi reports and browser simulation transcripts are visible in the dashboard. The browser simulation uses native Web Speech APIs and also supports text entry. Speech recognition is not supported in every browser and some implementations use a vendor service to process audio.
+
+The Vapi assistant prompt and exact tool parameter schemas live in `app/prompts/`. The `lookup_patient` tool is limited to inbound phone calls, searches only records for the caller number supplied by Vapi, and additionally requires last name and DOB. It rejects tool arguments that try to select a phone number or patient ID. Caller ID can be spoofed, so this is assessment-grade verification with synthetic data, not strong identity proof.
 
 ```powershell
 uv run python -m pytest -q
@@ -74,9 +78,10 @@ uv run ruff format --check .
 
 ## Current limitations and next steps
 
-- Live phone registration, conversation prompt, Vapi assistant/number, and deployment remain unconfigured. The Vapi webhook returns `error` for each tool call and cannot save patient data. Use `/dashboard/simulation` to exercise the independent browser flow.
+- The Vapi prompt and registration webhook are implemented, but the assistant, number, and deployment require provider access. A real call is still needed to validate Vapi's actual transcript shape and audio flow.
+- The current `/dashboard/simulation` is a scripted intake flow and does not test the actual agent path. The owner requires its redesign before the project is complete.
 - A Vapi free number does not make calls free indefinitely. Check current credits and billing before a live review.
 - Local SQLite persists across app restarts, but the app and tunnel must stay online. A Quick Tunnel has a temporary hostname and no uptime guarantee.
 - Patient API uses a shared API key. This is assessment-grade access control, not a production healthcare identity model.
-- Vapi registration and final-payload logging are unconfigured; the webhook remains a stub. Vapi reports and browser simulation transcripts are stored and viewable in the dashboard.
+- Confirmed Vapi registrations persist their conversation and patient link, and end-of-call reports add final call details. Logs can contain synthetic demographic data; use test data only.
 - Live phone number: **not provisioned**. Live API URL: **not deployed**. Add both here before submission.

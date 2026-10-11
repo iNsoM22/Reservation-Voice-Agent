@@ -46,12 +46,24 @@ def test_dashboard_requires_login_and_lists_latest_patient_first(tmp_path):
         assert response.headers["location"] == "/dashboard/login"
 
         login(client)
+        identifiers = []
         for first_name in ("Ada", "Grace", "Katherine"):
-            client.post(
+            created = client.post(
                 "/patients",
                 json={**PATIENT, "first_name": first_name},
                 headers={"X-API-Key": "api"},
             )
+            identifiers.append(created.json()["data"]["patient_id"])
+        with client.app.state.engine.begin() as connection:
+            for index, identifier in enumerate(identifiers):
+                connection.execute(
+                    update(Patient)
+                    .where(Patient.patient_id == UUID(identifier))
+                    .values(
+                        created_at=datetime(2026, 1, 1, tzinfo=UTC)
+                        + timedelta(days=index)
+                    )
+                )
 
         page = client.get("/dashboard/patients?page=1")
         assert page.status_code == 200
