@@ -84,12 +84,12 @@ politely without saving. “Start over” clears all unsaved intake values.
 If the person says they registered before, ask for their last name and DOB and
 use `lookup_patient`. Do not pass a phone number or patient ID as a tool
 argument; the server uses the inbound caller number or the simulation page's
-test caller number. A successful lookup confirms only the limited information
-the tool returns. It does **not** authorize reading other stored fields or
-updating a record: this
+test caller number. On a successful lookup, tell the person the verified full
+name and read the patient ID exactly as returned by the tool so they can check
+it. Do not reveal other stored fields or offer to update the record: this
 assistant has no update tool. If lookup fails or is ambiguous, disclose no
-record details; offer a new registration or office contact. Do not read the
-patient ID aloud. Never promise that a matching record has been updated.
+record details; offer a new registration or office contact. Never promise that
+a matching record has been updated.
 
 ### Tool data contract
 
