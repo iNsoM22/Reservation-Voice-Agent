@@ -1,6 +1,6 @@
 # Patient Registration Voice Agent
 
-Python backend for a patient-registration voice-agent assessment. The patient REST API, admin dashboard, and authenticated Vapi registration webhook work locally. The dashboard simulation needs rework before project completion. No phone number or deployment is configured yet.
+Python backend for a patient-registration voice-agent assessment. The patient REST API, admin dashboard, authenticated Vapi webhook, and browser voice page are implemented. Provider configuration and a live call check are still required. No phone number or deployment is configured yet.
 
 ## TL;DR
 
@@ -31,6 +31,8 @@ Do not commit `.env` or `patients.db`. Use synthetic patient data only.
 | `DATABASE_URL` | SQLAlchemy URL. Defaults to local `sqlite:///./patients.db`; `postgresql://` URLs are normalized to `postgresql+psycopg://`. |
 | `API_KEY` | Required `X-API-Key` for `/patients` routes. Without it, protected routes return 503. |
 | `VAPI_WEBHOOK_TOKEN` | Required bearer token for `POST /calls/vapi`. Without it, the webhook returns 503. Configure the matching credential in Vapi. |
+| `VAPI_PUBLIC_KEY` | Vapi public key for browser voice calls. Restrict it to the dashboard origin and saved assistant in Vapi. |
+| `VAPI_ASSISTANT_ID` | ID of the same saved Vapi assistant assigned to the phone number. |
 | `ADMIN_EMAIL` | Email used to create the initial dashboard administrator. |
 | `ADMIN_PASSWORD` | Password used to create the initial dashboard administrator. |
 | `DASHBOARD_SESSION_SECRET` | Long random secret used to sign dashboard sessions and CSRF tokens. |
@@ -54,8 +56,7 @@ Success responses use `{ "data": ..., "error": null }`. Error responses use `{ "
 | `POST` | `/calls/vapi` | Authenticated Vapi webhook for confirmed registration, caller-bound lookup, and end-of-call reports. |
 | `GET` | `/dashboard/login` | Dashboard sign-in page. |
 | `GET` | `/dashboard/patients`, `/dashboard/calls` | Authenticated patient and call-log pages. |
-| `GET` | `/dashboard/simulation` | Authenticated browser call simulation. |
-| `POST` | `/dashboard/simulation/calls`, `/dashboard/simulation/calls/{id}/turn` | Start and continue an admin-session-bound simulation; require the dashboard CSRF token. |
+| `GET` | `/dashboard/simulation` | Authenticated browser voice call with the saved Vapi assistant. |
 
 Example local call:
 
@@ -66,7 +67,7 @@ Invoke-RestMethod http://localhost:8000/patients -Headers $headers
 
 ## Architecture and tests
 
-`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. Vapi registration and REST share `PatientCreate` and `PatientService`. The voice webhook checks the call transcript for a matching readback and explicit confirmation, then saves the patient and call link in one transaction. Replayed calls return the existing result. Vapi reports and browser simulation transcripts are visible in the dashboard. The browser simulation uses native Web Speech APIs and also supports text entry. Speech recognition is not supported in every browser and some implementations use a vendor service to process audio.
+`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. Vapi registration and REST share `PatientCreate` and `PatientService`. The voice webhook checks the call transcript for a matching readback and explicit confirmation, then saves the patient and call link in one transaction. Replayed calls return the existing result. Phone and browser calls use the same saved Vapi assistant, tools, webhook, and call-log path; the browser page uses Vapi's voice widget and requires microphone access. Web calls do not have an inbound caller number, so existing-record lookup remains phone-only.
 
 The Vapi assistant prompt and exact tool parameter schemas live in `app/prompts/`. The `lookup_patient` tool is limited to inbound phone calls, searches only records for the caller number supplied by Vapi, and additionally requires last name and DOB. It rejects tool arguments that try to select a phone number or patient ID. Caller ID can be spoofed, so this is assessment-grade verification with synthetic data, not strong identity proof.
 
@@ -79,7 +80,7 @@ uv run ruff format --check .
 ## Current limitations and next steps
 
 - The Vapi prompt and registration webhook are implemented, but the assistant, number, and deployment require provider access. A real call is still needed to validate Vapi's actual transcript shape and audio flow.
-- The current `/dashboard/simulation` is a scripted intake flow and does not test the actual agent path. The owner requires its redesign before the project is complete.
+- The browser voice page now uses the actual Vapi assistant, but it cannot be exercised until the public key, assistant, HTTPS webhook, and provider account are configured. Browser calls may consume Vapi credits.
 - A Vapi free number does not make calls free indefinitely. Check current credits and billing before a live review.
 - Local SQLite persists across app restarts, but the app and tunnel must stay online. A Quick Tunnel has a temporary hostname and no uptime guarantee.
 - Patient API uses a shared API key. This is assessment-grade access control, not a production healthcare identity model.

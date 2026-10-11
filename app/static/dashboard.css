@@ -190,27 +190,12 @@ td { padding: 16px 21px; border-top: 1px solid #eff2f0; color: #43534a; font-siz
 .login-card form { display: grid; gap: 18px; margin-top: 28px; }
 .login-card label { display: grid; gap: 7px; color: #43534a; font-size: 13px; font-weight: 600; }
 .login-card input { width: 100%; height: 42px; padding: 0 11px; border: 1px solid #dce5df; border-radius: 5px; color: #26352e; font: inherit; }
-.login-card input:focus, .simulation-form input:focus { border-color: #5a9b7d; outline: 2px solid #a9d1bf; }
+.login-card input:focus { border-color: #5a9b7d; outline: 2px solid #a9d1bf; }
 .login-card button { height: 42px; border: 0; border-radius: 5px; background: #176b55; color: #fff; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
-.login-card button:hover, .simulation-form button:hover { background: #125a47; }
+.login-card button:hover { background: #125a47; }
 .form-error { margin: 0; padding: 10px 12px; border-radius: 5px; background: #fff1ef; color: #8a2d24; font-size: 13px; line-height: 1.5; }
 
 .simulation-panel { max-width: 800px; padding: 24px; border: 1px solid #e2e9e5; border-radius: 9px; background: #fff; box-shadow: 0 2px 7px #17362b08; }
-.simulation-status { display: flex; align-items: center; gap: 9px; color: #4c5c54; font-size: 13px; }
-.simulation-dot { width: 8px; height: 8px; border-radius: 50%; background: #548b70; }
-.simulation-messages { display: grid; gap: 12px; max-height: 440px; min-height: 160px; overflow: auto; margin: 20px 0; padding: 16px; border-radius: 7px; background: #f8faf9; }
-.simulation-message { max-width: 85%; margin: 0; padding: 12px 14px; border-radius: 8px; color: #34443c; font-size: 13px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
-.simulation-message.assistant { justify-self: start; background: #eaf4f0; }
-.simulation-message.user { justify-self: end; background: #176b55; color: #fff; }
-.simulation-controls { display: flex; gap: 10px; }
-.simulation-panel .button { margin: 0; font: inherit; font-size: 12px; cursor: pointer; }
-.simulation-panel .button:disabled { opacity: .55; cursor: not-allowed; }
-.secondary-button { background: #edf3f0; color: #315f4d; }
-.simulation-form { display: grid; gap: 7px; margin-top: 18px; color: #43534a; font-size: 13px; font-weight: 600; }
-.simulation-form[hidden] { display: none; }
-.simulation-form > div { display: flex; gap: 8px; }
-.simulation-form input { flex: 1; min-width: 0; height: 42px; padding: 0 11px; border: 1px solid #dce5df; border-radius: 5px; font: inherit; font-weight: 400; }
-.simulation-form button { padding: 0 18px; border: 0; border-radius: 5px; background: #176b55; color: #fff; font: inherit; font-size: 12px; cursor: pointer; }
 .simulation-note { margin: 18px 0 0; color: #5f6e66; font-size: 12px; line-height: 1.6; }
 
 @media (max-width: 800px) {
@@ -227,7 +212,5 @@ td { padding: 16px 21px; border-top: 1px solid #eff2f0; color: #43534a; font-siz
 }
 @media (max-width: 520px) {
   .simulation-panel { padding: 16px; }
-  .simulation-message { max-width: 94%; }
-  .simulation-controls { flex-wrap: wrap; }
   .login-card { padding: 28px 22px; }
 }

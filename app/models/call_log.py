@@ -1,4 +1,4 @@
-"""Persisted end-of-call details from Vapi and local simulations."""
+"""Persisted call details from Vapi and historical local simulations."""
 
 from datetime import datetime
 from typing import Any

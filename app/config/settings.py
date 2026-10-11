@@ -14,6 +14,8 @@ class Settings:
     admin_email: str = ""
     admin_password: str = ""
     dashboard_session_secret: str = ""
+    vapi_public_key: str = ""
+    vapi_assistant_id: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -25,4 +27,6 @@ class Settings:
             admin_email=config("ADMIN_EMAIL", default=""),
             admin_password=config("ADMIN_PASSWORD", default=""),
             dashboard_session_secret=config("DASHBOARD_SESSION_SECRET", default=""),
+            vapi_public_key=config("VAPI_PUBLIC_KEY", default=""),
+            vapi_assistant_id=config("VAPI_ASSISTANT_ID", default=""),
         )

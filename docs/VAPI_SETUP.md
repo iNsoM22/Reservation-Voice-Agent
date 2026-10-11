@@ -28,6 +28,16 @@ must be configured in the provider dashboard to make real calls.
    Try a correction, invalid DOB, rejected confirmation, and repeat delivery.
    Record the actual number, public URL, and provider selections in README.
 
+For the dashboard browser voice test, create a **public** Vapi key restricted to
+the dashboard origin and the same saved assistant. Set `VAPI_PUBLIC_KEY` and
+`VAPI_ASSISTANT_ID` in `.env`, restart the app, and open `/dashboard/simulation`
+as an admin. Allow microphone access and start the widget's voice session.
+It uses Vapi's configured LLM, transcriber, voice, Function tools, webhook,
+and call reports without dialing a number. The app's webhook still needs a
+public HTTPS URL reachable by Vapi. Check the patient and call-log dashboards
+after confirming a synthetic registration. Existing-record lookup remains
+unavailable in a web call because it has no trusted inbound caller number.
+
 The registration webhook requires the Vapi event's `call.id` and conversation
 `artifact.messages` with an assistant readback followed immediately by a clear
 user confirmation. A missing transcript or mismatched readback returns a

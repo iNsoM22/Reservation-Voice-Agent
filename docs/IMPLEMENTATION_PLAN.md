@@ -19,7 +19,7 @@ Use **Vapi** for the U.S. phone number, speech, and conversational LLM; **Python
 | REST CRUD | FastAPI routes and shared service | `GET /patients` with three optional filters, `GET /patients/{id}`, `POST /patients`, partial `PUT /patients/{id}`, and soft `DELETE /patients/{id}`. Hide deleted records from ordinary reads. Use the specified `{ "data": ..., "error": null }` envelope and consistent error envelope/status codes. |
 | Admin access and bootstrap | Dashboard auth routes, user model, `scripts/create_admin.py` | Delivered: bootstrap the initial administrator from environment settings and protect dashboard pages with signed sessions and CSRF checks. |
 | Patient dashboard | Jinja templates and static assets | Delivered: authenticated patient list/detail pages and call-log list/detail pages. Templates live in `app/templates/`; browser styles and behavior live in `app/static/`. |
-| Browser simulation | Dashboard simulation routes and browser assets | Existing scripted flow is incorrect for the owner's intended agent simulation. Rework is deferred and blocks project completion; see `NOTES.md`. |
+| Browser simulation | Authenticated dashboard page and Vapi voice widget | Delivered: browser microphone/audio uses the same saved assistant, prompt, speech providers, tools, webhook, validation, persistence, and reports as phone calls. Requires Vapi configuration and live verification; caller-number lookup is phone-only. |
 | Vapi registration and reports | Authenticated Vapi route, call service and call-log service | Delivered: validate a transcript-backed confirmation, write through `PatientService`, link the call, handle retries, and persist `end-of-call-report` data. Live provider validation is still pending. |
 | Returning caller | Caller-bound `lookup_patient` tool | Lookup uses the provider's caller number plus matching last name and DOB; arguments cannot select another number or patient ID. Caller ID spoofing means this is only assessment-grade verification. |
 | Deployment and visibility | Railway API + Postgres, Vapi settings, README | Set `DATABASE_URL` and webhook secret through environment variables, deploy HTTPS API, configure Vapi tool URL, add live number/API URL to README, and place a second call. Log call ID, validation result, and write outcome; avoid full patient payloads in public logs. |
@@ -62,7 +62,7 @@ Reservation Voice Agent/
     IMPLEMENTATION_PLAN.md
 ```
 
-Split any module as its responsibilities grow. Every source and test file must remain under 600 lines. The dashboard, browser simulation, and call-log visibility were explicitly requested by the project owner and are delivered; keep the remaining live-phone work focused on the core registration path.
+Split any module as its responsibilities grow. Every source and test file must remain under 600 lines. The dashboard, browser voice page, and call-log visibility were explicitly requested by the project owner and are delivered; live provider verification remains.
 
 ## Delivery order and validation gates
 

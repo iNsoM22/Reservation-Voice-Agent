@@ -71,6 +71,23 @@ def lookup_event(number, *, last_name="Doe", date_of_birth="01/02/1990"):
     }
 
 
+def test_browser_voice_registration_uses_vapi_webhook_and_call_log(tmp_path):
+    with make_client(tmp_path) as client:
+        event = registration_event(call_id="web-voice-1")
+        event["message"]["call"]["type"] = "webCall"
+        result = client.post(
+            "/calls/vapi",
+            json=event,
+            headers={"Authorization": "Bearer test-vapi-token"},
+        )
+        assert result.status_code == 200
+        assert "Registration complete" in result.json()["results"][0]["result"]
+        with Session(client.app.state.engine) as session:
+            log = session.query(CallLog).filter_by(call_id="web-voice-1").one()
+            assert log.patient_id is not None
+            assert log.source == "vapi"
+
+
 def test_lookup_uses_verified_call_number_and_never_crosses_to_another_patient(
     tmp_path,
 ):
