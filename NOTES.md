@@ -31,6 +31,8 @@
 
 ## Open issues / changes
 
+- 2026-10-11 Heroku deploy v11 built successfully but returned H14 (`No web processes running`). Added a root `Procfile` with the Uvicorn web command, normalized Heroku's `postgres://` database URL, and made `/` load the patient dashboard. The user must redeploy this revision, ensure `web=1`, and verify `/health`; remote dyno state and Heroku config vars are not visible from this workspace.
+
 - Live-call blocker: no Vapi account, number, credits, or provider credentials supplied in the workspace.
 - Public URL blocker: no tunnel/domain is running; a Quick Tunnel URL is temporary and the local machine must remain online.
 - Financial limit: Vapi's free number still consumes call credits; after trial credits, live calls require payment. See `docs/PIPELINE_REPORT.md`.

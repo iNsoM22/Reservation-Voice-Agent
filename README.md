@@ -20,6 +20,8 @@ uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 For a public tunnel, use `cloudflared tunnel --url http://localhost:8000` in another terminal after installing `cloudflared`. The tunnel URL changes when restarted. Keep the app and tunnel running during evaluation.
 
+For Heroku, deploy this project directory with its root `Procfile`; Heroku's Python buildpack uses `uv.lock` to install dependencies. Set the variables below as Heroku config vars and attach Heroku Postgres so `DATABASE_URL` persists across dyno restarts. Use a Basic or higher web dyno for an always-available webhook. After deploying, ensure one web dyno is running (`heroku ps:scale web=1 -a YOUR-APP`) and check `https://YOUR-APP.herokuapp.com/health`. Opening `/` loads the patient dashboard or redirects to login. A build can succeed while the web dyno is scaled to zero, which produces Heroku H14.
+
 To connect a real phone, follow [Vapi live-call setup](docs/VAPI_SETUP.md). The Vapi account, public URL, assistant, and number must be supplied in that dashboard. The backend cannot provision them without provider access.
 
 Do not commit `.env` or `patients.db`. Use synthetic patient data only.
@@ -28,7 +30,7 @@ Do not commit `.env` or `patients.db`. Use synthetic patient data only.
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | SQLAlchemy URL. Defaults to local `sqlite:///./patients.db`; `postgresql://` URLs are normalized to `postgresql+psycopg://`. |
+| `DATABASE_URL` | SQLAlchemy URL. Defaults to local `sqlite:///./patients.db`; Heroku's `postgres://` and `postgresql://` URLs are normalized to `postgresql+psycopg://`. |
 | `API_KEY` | Required `X-API-Key` for `/patients` routes. Without it, protected routes return 503. |
 | `VAPI_WEBHOOK_TOKEN` | Required bearer token for `POST /calls/vapi`. Without it, the webhook returns 503. Configure the matching credential in Vapi. |
 | `VAPI_PUBLIC_KEY` | Vapi public key for browser voice calls. Restrict it to the dashboard origin and saved assistant in Vapi. |

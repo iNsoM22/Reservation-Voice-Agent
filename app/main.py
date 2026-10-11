@@ -31,9 +31,11 @@ logger = logging.getLogger(__name__)
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
-    database_url = settings.database_url.replace(
-        "postgresql://", "postgresql+psycopg://", 1
-    )
+    database_url = settings.database_url
+    for prefix in ("postgres://", "postgresql://"):
+        if database_url.startswith(prefix):
+            database_url = "postgresql+psycopg://" + database_url[len(prefix) :]
+            break
     engine = create_engine(database_url, pool_pre_ping=True)
 
     @asynccontextmanager

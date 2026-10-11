@@ -39,6 +39,17 @@ def login(client):
     )
 
 
+def test_root_loads_dashboard_and_requires_login(tmp_path):
+    with make_client(tmp_path) as client:
+        response = client.get("/")
+        assert response.status_code == 303
+        assert response.headers["location"] == "/dashboard/login"
+        login(client)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "Patients" in response.text
+
+
 def test_dashboard_requires_login_and_lists_latest_patient_first(tmp_path):
     with make_client(tmp_path) as client:
         response = client.get("/dashboard/patients")

@@ -23,6 +23,7 @@ def dashboard(request: Request):
     return RedirectResponse("/dashboard/patients", status_code=303)
 
 
+@router.get("/")
 @router.get("/dashboard/patients")
 def patients(request: Request, page: int = Query(default=1, ge=1, le=100_000)):
     require_dashboard_user(request)
