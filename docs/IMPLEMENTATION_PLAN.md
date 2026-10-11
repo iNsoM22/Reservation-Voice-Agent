@@ -4,7 +4,7 @@ Source: `../../Context/voice_ai_agent_coding_challenge.md`. This document record
 
 ## TL;DR
 
-Use **Vapi** for the U.S. phone number, speech, and conversational LLM; **Python 3.12 + FastAPI + Pydantic** for the API and Vapi tool webhook; **SQLAlchemy** for persistence; and **uv + pytest + Ruff** for development. For a temporary no-upfront-payment demo, run local SQLite behind a Cloudflare Quick Tunnel while Vapi trial credits last. For unattended hosting, use persistent PostgreSQL and a paid or otherwise reliable host. See `PIPELINE_REPORT.md` for costs and limitations.
+The delivered stack uses **Vapi** for the configured voice assistant, speech, and phone calls; **Heroku** for the FastAPI API and webhook; **SQLAlchemy** with a configured database for persistence; and **uv + pytest + Ruff** for development. Local development defaults to SQLite. See `PIPELINE_REPORT.md` for deployment trade-offs and cost notes.
 
 ## Components and feature map
 
@@ -19,10 +19,10 @@ Use **Vapi** for the U.S. phone number, speech, and conversational LLM; **Python
 | REST CRUD | FastAPI routes and shared service | `GET /patients` with three optional filters, `GET /patients/{id}`, `POST /patients`, partial `PUT /patients/{id}`, and soft `DELETE /patients/{id}`. Hide deleted records from ordinary reads. Use the specified `{ "data": ..., "error": null }` envelope and consistent error envelope/status codes. |
 | Admin access and bootstrap | Dashboard auth routes, user model, `scripts/create_admin.py` | Delivered: bootstrap the initial administrator from environment settings and protect dashboard pages with signed sessions and CSRF checks. |
 | Patient dashboard | Jinja templates and static assets | Delivered: authenticated patient list/detail pages and call-log list/detail pages. Templates live in `app/templates/`; browser styles and behavior live in `app/static/`. |
-| Browser simulation | Authenticated dashboard page and Vapi voice widget | Delivered: browser microphone/audio uses the same saved assistant, prompt, speech providers, tools, webhook, validation, persistence, and reports as phone calls. Requires Vapi configuration and live verification; caller-number lookup is phone-only. |
+| Browser simulation | Authenticated dashboard page and Vapi voice widget | Delivered: browser microphone/audio uses the same saved assistant, tools, webhook, validation, persistence, and reports as phone calls. A signed test caller number enables registration and lookup against matching synthetic records. Live provider verification remains. |
 | Vapi registration and reports | Authenticated Vapi route, call service and call-log service | Delivered: validate a transcript-backed confirmation, write through `PatientService`, link the call, handle retries, and persist `end-of-call-report` data. Live provider validation is still pending. |
-| Returning caller | Caller-bound `lookup_patient` tool | Lookup uses the provider's caller number plus matching last name and DOB; arguments cannot select another number or patient ID. Caller ID spoofing means this is only assessment-grade verification. |
-| Deployment and visibility | Railway API + Postgres, Vapi settings, README | Set `DATABASE_URL` and webhook secret through environment variables, deploy HTTPS API, configure Vapi tool URL, add live number/API URL to README, and place a second call. Log call ID, validation result, and write outcome; avoid full patient payloads in public logs. |
+| Returning caller | Caller-bound `lookup_patient` tool | Lookup uses the provider caller number or signed simulation number plus matching last name and DOB; tool arguments cannot select another number or patient ID. |
+| Deployment and visibility | Heroku API, Vapi settings, dashboard | Heroku serves the HTTPS API and webhook. The authenticated dashboard shows patients and call details, including transcripts and reports when supplied by Vapi. Use a persistent database URL for deployed records. |
 
 ## Request flow
 
@@ -30,7 +30,7 @@ Use **Vapi** for the U.S. phone number, speech, and conversational LLM; **Python
 2. Assistant repeats every collected field and obtains an explicit yes or corrections.
 3. Assistant invokes `register_patient` only after confirmation.
 4. FastAPI webhook authenticates Vapi, validates the tool payload, and calls `PatientService`.
-5. Service writes to PostgreSQL. Webhook returns a Vapi tool result; assistant speaks success or failure and ends gracefully.
+5. Service writes to the configured database. Webhook returns a Vapi tool result; assistant speaks success or failure and ends gracefully.
 6. REST routes use the same service and database. No second persistence path.
 
 ## Suggested project layout
@@ -68,10 +68,10 @@ Split any module as its responsibilities grow. Every source and test file must r
 
 1. **Review:** Re-read challenge, `pyproject.toml`, repository guidance, and relevant vendor docs. Record any changed assumptions in `NOTES.md`.
 2. **Plan:** Fix API contracts, schemas, state normalization, Vapi tool shape, hosting, and acceptance cases before writing production code.
-3. **Validate plan:** Check every mandatory challenge row against the feature map above; verify number availability, Vapi webhook response format, Railway persistence, and how reviewer access will work. Resolve gaps before coding.
+3. **Validate plan:** Check every mandatory challenge row against the feature map above; verify number availability, Vapi webhook response format, Heroku persistence, and reviewer access. Resolve gaps before coding.
 4. **TDD: data/API:** For each behavior, write a failing test, observe the expected failure, implement the minimum, rerun, and refactor. Cover validation boundaries, filters, partial update, soft delete, envelopes, restart persistence, and write failures.
 5. **Delivered TDD: Vapi registration:** Contract tests cover confirmed registration, retry idempotency, invalid and unconfirmed data, and report linking. Validate the actual provider payload in a live call before review.
-6. **Pending end-to-end:** Provision/configure Vapi number and assistant, deploy a public HTTPS endpoint, complete a real call, query the patient, restart the API, repeat the query, then make a correction/invalid-data call. Complete README with actual live details and limitations.
+6. **Pending end-to-end evidence:** Verify a real Vapi call against the deployed Heroku endpoint, query the patient, restart the API, repeat the query, then test correction and invalid data. Add the actual live URL, number, and provider selections to README when available.
 
 ## Decisions and limits to confirm during implementation
 
@@ -88,5 +88,5 @@ Split any module as its responsibilities grow. Every source and test file must r
 - [Vapi custom tool contract](https://docs.vapi.ai/tools/custom-tools)
 - [Vapi server URLs](https://docs.vapi.ai/server-url/)
 - [FastAPI SQL database tutorial](https://fastapi.tiangolo.com/tutorial/sql-databases/)
-- [Railway PostgreSQL](https://docs.railway.com/databases/postgresql)
+- [Heroku Postgres](https://devcenter.heroku.com/articles/heroku-postgresql)
 

@@ -1,10 +1,10 @@
 # Patient Registration Voice Agent
 
-Python backend for a patient-registration voice-agent assessment. The patient REST API, admin dashboard, authenticated Vapi webhook, and browser voice page are implemented. Provider configuration and a live call check are still required. No phone number or deployment is configured yet.
+Python backend for a patient-registration voice agent deployed on Heroku and connected to a configured Vapi assistant. It includes a patient REST API, authenticated Vapi webhook, administrator dashboard, call observability pages, and browser voice simulation. The live app URL, phone number, and provider settings are not stored in this repository.
 
 ## TL;DR
 
-Use Vapi for the inbound U.S. phone number, speech and LLM; this FastAPI app for validated patient records; SQLite for local persistent storage; and a Cloudflare Quick Tunnel for a temporary public test URL. The Vapi number and initial credits may allow a short test with no upfront payment, but calls are metered and the tunnel requires this computer to stay running.
+Vapi runs the voice assistant, inbound calls, and browser voice sessions. Heroku runs the FastAPI app and its Vapi webhook; Heroku Postgres should hold durable patient and call records. SQLite remains the local development default.
 
 ## Setup
 
@@ -18,11 +18,9 @@ uv run python -m scripts.create_admin
 uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-For a public tunnel, use `cloudflared tunnel --url http://localhost:8000` in another terminal after installing `cloudflared`. The tunnel URL changes when restarted. Keep the app and tunnel running during evaluation.
+For Heroku, deploy this project directory with its root `Procfile`; set the variables below as config vars and attach Heroku Postgres for persistent records. The `web` process runs Uvicorn on Heroku's `$PORT`. Verify `/health` on the deployed app and open `/` for the dashboard login. Keep a web dyno running for Vapi webhooks; an H14 response means no web process is running.
 
-For Heroku, deploy this project directory with its root `Procfile`; Heroku's Python buildpack uses `uv.lock` to install dependencies. Set the variables below as Heroku config vars and attach Heroku Postgres so `DATABASE_URL` persists across dyno restarts. Use a Basic or higher web dyno for an always-available webhook. After deploying, ensure one web dyno is running (`heroku ps:scale web=1 -a YOUR-APP`) and check `https://YOUR-APP.herokuapp.com/health`. Opening `/` loads the patient dashboard or redirects to login. A build can succeed while the web dyno is scaled to zero, which produces Heroku H14.
-
-To connect a real phone, follow [Vapi live-call setup](docs/VAPI_SETUP.md). The Vapi account, public URL, assistant, and number must be supplied in that dashboard. The backend cannot provision them without provider access.
+To review or update the Vapi assistant, tools, webhook credential, and inbound number, follow [Vapi setup](docs/VAPI_SETUP.md). Publish prompt changes in Vapi; editing the repository prompt alone does not change the saved assistant.
 
 Do not commit `.env` or `patients.db`. Use synthetic patient data only.
 
@@ -57,8 +55,10 @@ Success responses use `{ "data": ..., "error": null }`. Error responses use `{ "
 | `DELETE` | `/patients/{id}` | Soft delete a patient. |
 | `POST` | `/calls/vapi` | Authenticated Vapi webhook for confirmed registration, caller-bound lookup, and end-of-call reports. |
 | `GET` | `/dashboard/login` | Dashboard sign-in page. |
-| `GET` | `/dashboard/patients`, `/dashboard/calls` | Authenticated patient and call-log pages. |
+| `GET` | `/`, `/dashboard/patients`, `/dashboard/patients/{id}` | Authenticated patient list and detail pages. |
+| `GET` | `/dashboard/calls`, `/dashboard/calls/{id}` | Authenticated call list and detail pages with transcript and report data. |
 | `GET` | `/dashboard/simulation` | Authenticated browser voice call with the saved Vapi assistant. |
+| `POST` | `/dashboard/simulation/number` | Authenticated, CSRF-protected issuance of a signed test caller number. |
 
 Example local call:
 
@@ -69,7 +69,7 @@ Invoke-RestMethod http://localhost:8000/patients -Headers $headers
 
 ## Architecture and tests
 
-`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. Vapi registration and REST share `PatientCreate` and `PatientService`. When Vapi supplies conversation messages, the voice webhook checks the final readback question, affirmative reply, and name/sex values before saving the patient and call link in one transaction. Vapi may send an empty message artifact; in that case, the webhook relies on the assistant's tool invocation and the published prompt to enforce spoken confirmation. Replayed calls return the existing result. Phone and browser calls use the same saved Vapi assistant, tools, webhook, and call-log path; the browser page uses Vapi's voice widget and requires microphone access. The simulation page issues a signed test caller number for browser calls. Registration requires the confirmed phone number to match it; lookup uses that number plus last name and DOB. Existing records can be found only when their stored phone number matches the test number. The prompt in this repository tells the assistant to refuse browser lookup, so that instruction must be changed and published before a live browser lookup can work.
+`app/validations` owns Pydantic DTOs; `app/models` owns SQLAlchemy tables; `app/services` owns patient writes/queries and call logs; `app/routes` owns HTTP transport and authentication; `app/config` owns settings. Vapi registration and REST share `PatientCreate` and `PatientService`. When Vapi supplies conversation messages, the voice webhook checks the final readback question, affirmative reply, and name/sex values before saving the patient and call link in one transaction. Vapi may send an empty message artifact; in that case, the webhook relies on the assistant's tool invocation and the published prompt to enforce spoken confirmation. Replayed calls return the existing result. Phone and browser calls use the same saved Vapi assistant, tools, webhook, and call-log path; the browser page uses Vapi's voice widget and requires microphone access. The simulation page issues a signed test caller number for browser calls. Registration requires the confirmed phone number to match it; lookup uses that number plus last name and DOB. Existing records can be found only when their stored phone number matches the test number.
 
 The Vapi assistant prompt and exact tool parameter schemas live in `app/prompts/`. The `lookup_patient` tool accepts inbound calls and signed browser simulations, searches only records for the provider caller number or signed test number, and additionally requires last name and DOB. It rejects tool arguments that try to select a phone number or patient ID. Caller ID can be spoofed, so this is assessment-grade verification with synthetic data, not strong identity proof.
 
@@ -79,12 +79,13 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-## Current limitations and next steps
+## Observability and current limits
 
-- The Vapi prompt and registration webhook are implemented, but the assistant, number, and deployment require provider access. A real call is still needed to validate Vapi's actual transcript shape and audio flow.
-- The browser voice page now uses the actual Vapi assistant, but it cannot be exercised until the public key, assistant, HTTPS webhook, and provider account are configured. Browser calls may consume Vapi credits.
-- A Vapi free number does not make calls free indefinitely. Check current credits and billing before a live review.
-- Local SQLite persists across app restarts, but the app and tunnel must stay online. A Quick Tunnel has a temporary hostname and no uptime guarantee.
+- The patient list and detail pages show saved registrations. The call list and detail pages show persisted calls, transcripts, report data, and linked patients when available. Vapi's own webhook logs remain useful for checking delivery failures.
+- A simulation requires microphone permission and a 10-digit U.S. test caller number. The server signs that number for the browser call; lookup matches it with the spoken last name and DOB. The signed number expires after one hour.
+- The revised browser-lookup prompt must be published in the saved Vapi assistant before testing it live. Repository tests cannot verify published prompt contents, live audio, or provider delivery.
+- Browser calls consume Vapi resources; check account credits and billing before testing.
+- Heroku needs a persistent `DATABASE_URL` such as Heroku Postgres. Local SQLite persists only on the local machine.
 - Patient API uses a shared API key. This is assessment-grade access control, not a production healthcare identity model.
 - Confirmed Vapi registrations persist their conversation and patient link, and end-of-call reports add final call details. Logs can contain synthetic demographic data; use test data only.
-- Live phone number: **not provisioned**. Live API URL: **not deployed**. Add both here before submission.
+- The live Heroku URL and Vapi phone number were not supplied for this documentation update. Add them before sharing the demo.
