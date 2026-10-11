@@ -208,6 +208,11 @@ td { padding: 16px 21px; border-top: 1px solid #eff2f0; color: #43534a; font-siz
 .simulation-number-row button:disabled { opacity: .65; cursor: wait; }
 .simulation-status { margin: 12px 0 0; color: #315b4b; font-size: 12px; line-height: 1.5; }
 .simulation-status:empty { display: none; }
+.simulation-voice-controls { margin-top: 18px; }
+.simulation-voice-controls button { min-height: 44px; padding: 0 20px; border: 0; border-radius: 6px; background: #176b55; color: #fff; font: inherit; font-size: 13px; font-weight: 650; cursor: pointer; }
+.simulation-voice-controls button:disabled { opacity: .65; cursor: wait; }
+.simulation-voice-controls #simulation-end-call { background: #9b3b31; }
+.simulation-voice-controls button[hidden] { display: none; }
 .simulation-change-number { margin-top: 14px; padding: 0; border: 0; background: none; color: #176b55; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
 .simulation-change-number[hidden] { display: none; }
 .simulation-note { margin: 18px 0 0; color: #5f6e66; font-size: 12px; line-height: 1.6; }

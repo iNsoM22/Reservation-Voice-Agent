@@ -27,13 +27,15 @@ def test_browser_voice_uses_saved_vapi_assistant_and_requires_login(tmp_path):
     with TestClient(create_app(settings), follow_redirects=False) as client:
         login(client)
         page = client.get("/dashboard/simulation").text
-        assert 'public-key="public-test-key"' in page
-        assert 'assistant-id="assistant-test-id"' in page
-        assert 'mode="voice"' in page
+        assert 'data-public-key="public-test-key"' in page
+        assert 'data-assistant-id="assistant-test-id"' in page
+        assert 'id="simulation-start-call"' in page
+        assert 'id="simulation-end-call"' in page
+        assert "vapi-widget" not in page
         assert "widget.umd.js" not in page
         assert 'id="simulation-phone"' in page
         assert "simulation-caller.js" in page
-        assert 'id="simulation-widget"' in page
+        assert 'id="simulation-voice-controls"' in page
 
 
 def test_scripted_simulation_endpoints_are_removed(tmp_path):

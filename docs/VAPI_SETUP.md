@@ -32,8 +32,9 @@ Use this checklist when checking or changing that configuration.
 For the dashboard browser voice test, use a **public** Vapi key restricted to
 the dashboard origin and the same saved assistant. Set `VAPI_PUBLIC_KEY` and
 `VAPI_ASSISTANT_ID` as Heroku config vars, then open `/dashboard/simulation`
-as an admin. Enter a 10-digit test caller number, allow microphone access, and
-start the widget's voice session.
+as an admin. Enter a 10-digit test caller number, select Start voice test, and
+allow microphone access. The browser uses Vapi's Web SDK to start the saved
+assistant ID with the signed number in `assistantOverrides.variableValues`.
 It uses Vapi's configured LLM, transcriber, voice, Function tools, webhook,
 and call reports without dialing a number. The app's webhook still needs a
 public HTTPS URL reachable by Vapi. Check the patient and call-log dashboards

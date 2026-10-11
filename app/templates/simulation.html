@@ -24,8 +24,10 @@
     </form>
     <button id="simulation-change-number" class="simulation-change-number" type="button" hidden>Use a different number</button>
     <input id="simulation-csrf" type="hidden" value="{{ csrf_token }}">
-    <template id="simulation-widget-template"><vapi-widget public-key="{{ vapi_public_key }}" assistant-id="{{ vapi_assistant_id }}" mode="voice" theme="light" size="compact" start-button-text="Start voice test" end-button-text="End voice test"></vapi-widget></template>
-    <div id="simulation-widget" class="simulation-widget"></div>
+    <div id="simulation-voice-controls" class="simulation-voice-controls" data-public-key="{{ vapi_public_key }}" data-assistant-id="{{ vapi_assistant_id }}">
+      <button id="simulation-start-call" type="button" hidden>Start voice test</button>
+      <button id="simulation-end-call" type="button" hidden>End voice test</button>
+    </div>
     <p class="simulation-note">The test number is used for registration and lookup in browser calls. Phone calls still use their actual caller number.</p>
     <script src="/static/scripts/simulation-caller.js" defer></script>
   {% else %}
