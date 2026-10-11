@@ -24,6 +24,11 @@ CONFIRMATIONS = {
     "that is correct",
     "i confirm",
     "confirmed",
+    "yes everything is correct",
+    "yes all of that is correct",
+    "yes all correct",
+    "yep that's correct",
+    "yep that is correct",
 }
 
 
@@ -98,7 +103,7 @@ class CallService:
                 dict.fromkeys(str(error["loc"][0]) for error in exc.errors())
             )
             return {"error": f"Please correct these fields: {fields}."}
-        if not _confirmed(messages, data):
+        if messages and not _confirmed(messages, data):
             return {
                 "error": "Please read back the details and get the caller's clear confirmation before saving."
             }
@@ -132,7 +137,7 @@ class CallService:
                 existing.transcript = "\n".join(
                     f"{item['role']}: {item.get('message', '')}"
                     for item in messages
-                    if item.get("role") in {"user", "assistant"}
+                    if item.get("role") in {"user", "assistant", "bot"}
                 )
             self.session.commit()
             logger.info(
@@ -155,19 +160,21 @@ def _confirmed(messages: list[dict[str, Any]], data: PatientCreate) -> bool:
     conversation = [
         item
         for item in messages
-        if item.get("role") in {"user", "assistant"}
+        if item.get("role") in {"user", "assistant", "bot"}
         and isinstance(item.get("message"), str)
     ]
     if (
         len(conversation) < 2
         or conversation[-1]["role"] != "user"
-        or conversation[-2]["role"] != "assistant"
+        or conversation[-2]["role"] not in {"assistant", "bot"}
     ):
         return False
     reply = re.sub(r"[^a-z\s']", "", conversation[-1]["message"].casefold()).strip()
     readback = conversation[-2]["message"].casefold()
-    values = data.model_dump(mode="json", exclude_unset=True)
-    values["date_of_birth"] = data.date_of_birth.strftime("%m/%d/%Y")
+    # Spoken numbers, dates, and addresses rarely match their stored spelling.
+    # The assistant is responsible for the full readback; verify the exchange
+    # and the identity fields when Vapi supplies conversation messages.
+    values = (data.first_name, data.last_name, data.sex.value)
     return (
         reply in CONFIRMATIONS
         and any(
@@ -180,8 +187,7 @@ def _confirmed(messages: list[dict[str, Any]], data: PatientCreate) -> bool:
         )
         and all(
             re.search(rf"(?<!\w){re.escape(str(value).casefold())}(?!\w)", readback)
-            for value in values.values()
-            if value is not None
+            for value in values
         )
     )
 

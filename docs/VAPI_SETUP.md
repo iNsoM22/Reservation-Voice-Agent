@@ -38,11 +38,13 @@ public HTTPS URL reachable by Vapi. Check the patient and call-log dashboards
 after confirming a synthetic registration. Existing-record lookup remains
 unavailable in a web call because it has no trusted inbound caller number.
 
-The registration webhook requires the Vapi event's `call.id` and conversation
-`artifact.messages` with an assistant readback followed immediately by a clear
-user confirmation. A missing transcript or mismatched readback returns a
-tool-level error without writing a patient. The provider's actual message
-shape and live audio path still need a real-call check in your account.
+The registration webhook requires the Vapi event's `call.id`. When conversation
+`artifact.messages` are present, it verifies the assistant's final readback
+question, an immediate clear user confirmation, and the spoken name and sex.
+Vapi may send an empty message artifact with a tool call; then the published
+assistant prompt is responsible for waiting for spoken confirmation before
+invoking the tool. Update that prompt when deploying this fix. Check the actual
+tool payload and live audio path in Vapi Logs → Webhooks after a real call.
 Caller ID can be absent or spoofed. Lookup denies absent caller ID and requires
 last name and DOB as additional checks. It also denies web and outbound calls,
 where the customer number can be supplied by a client. Use synthetic data only.

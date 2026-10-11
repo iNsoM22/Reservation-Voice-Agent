@@ -240,6 +240,38 @@ def test_unconfirmed_or_invalid_call_does_not_save(tmp_path):
         )
 
 
+def test_spoken_readback_and_confirmation_save_registration(tmp_path):
+    event = registration_event()
+    event["message"]["artifact"]["messages"][0]["message"] = (
+        "I have Jane Doe, born January second, nineteen ninety, female, "
+        "phone four one five five five five zero one zero zero, at one Main Street, "
+        "Oakland, California, nine four six zero seven. Is all of that correct?"
+    )
+    event["message"]["artifact"]["messages"][1]["message"] = (
+        "Yes, everything is correct."
+    )
+    event["message"]["artifact"]["messages"][0]["role"] = "bot"
+    with make_client(tmp_path) as client:
+        response = client.post(
+            "/calls/vapi",
+            json=event,
+            headers={"Authorization": "Bearer test-vapi-token"},
+        )
+        assert "result" in response.json()["results"][0]
+
+
+def test_vapi_empty_artifact_allows_confirmed_tool_invocation(tmp_path):
+    event = registration_event()
+    event["message"]["artifact"]["messages"] = []
+    with make_client(tmp_path) as client:
+        response = client.post(
+            "/calls/vapi",
+            json=event,
+            headers={"Authorization": "Bearer test-vapi-token"},
+        )
+        assert "result" in response.json()["results"][0]
+
+
 def test_readback_does_not_accept_fields_hidden_inside_other_words(tmp_path):
     event = registration_event(patient={**PATIENT, "first_name": "Al", "state": "LA"})
     readback = event["message"]["artifact"]["messages"][0]
