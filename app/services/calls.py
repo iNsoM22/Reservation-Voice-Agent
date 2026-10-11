@@ -93,6 +93,8 @@ class CallService:
         call_id: str | None,
         arguments: dict[str, Any],
         messages: list[dict[str, Any]],
+        *,
+        caller_number: str | None = None,
     ) -> dict[str, str]:
         if not call_id:
             return {"error": "Call ID is missing. Please try again."}
@@ -103,6 +105,10 @@ class CallService:
                 dict.fromkeys(str(error["loc"][0]) for error in exc.errors())
             )
             return {"error": f"Please correct these fields: {fields}."}
+        if caller_number and data.phone_number != _caller_phone(caller_number):
+            return {
+                "error": "The confirmed phone number does not match the simulation caller number. Please use the same number for both."
+            }
         if messages and not _confirmed(messages, data):
             return {
                 "error": "Please read back the details and get the caller's clear confirmation before saving."

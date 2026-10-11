@@ -31,7 +31,8 @@ def test_browser_voice_uses_saved_vapi_assistant_and_requires_login(tmp_path):
         assert 'assistant-id="assistant-test-id"' in page
         assert 'mode="voice"' in page
         assert "@vapi-ai/client-sdk-react@0.1.1/dist/embed/widget.umd.js" in page
-        assert "simulation.js" not in page
+        assert 'id="simulation-phone"' in page
+        assert "simulation-caller.js" in page
 
 
 def test_scripted_simulation_endpoints_are_removed(tmp_path):

@@ -143,6 +143,155 @@ def test_lookup_rejects_non_inbound_call_even_with_matching_number(tmp_path):
         assert "Jane" not in str(response.json())
 
 
+def test_simulation_number_drives_registration_and_lookup(tmp_path):
+    import time
+
+    from fastapi.testclient import TestClient
+
+    from app.config.settings import Settings
+    from app.main import create_app
+    from app.routes.dashboard_auth import _signed
+
+    settings = Settings(
+        database_url=f"sqlite:///{tmp_path / 'simulation.db'}",
+        api_key="test-api-key",
+        vapi_webhook_token="test-vapi-token",
+        admin_email="admin@example.com",
+        admin_password="secret password",
+        dashboard_session_secret="session-secret-for-dashboard-tests",
+    )
+    with TestClient(create_app(settings), follow_redirects=False) as client:
+        from test.routes.test_dashboard import login
+
+        login(client)
+        csrf = client.cookies.get("dashboard_csrf")
+        issued = client.post(
+            "/dashboard/simulation/number",
+            json={"phone_number": "(415) 555-0100", "csrf_token": csrf},
+        )
+        assert issued.status_code == 200
+        token = issued.json()["token"]
+        assert (
+            client.post(
+                "/dashboard/simulation/number",
+                json={"phone_number": "123", "csrf_token": csrf},
+            ).status_code
+            == 422
+        )
+        event = registration_event(call_id="simulation-registration")
+        event["message"]["call"].update(
+            {
+                "type": "webCall",
+                "assistantOverrides": {
+                    "variableValues": {"simulationCallerToken": token}
+                },
+            }
+        )
+        event["message"]["toolCallList"][0]["function"]["arguments"]["phone_number"] = (
+            "2125550100"
+        )
+        auth = {"Authorization": "Bearer test-vapi-token"}
+        assert (
+            "error"
+            in client.post("/calls/vapi", json=event, headers=auth).json()["results"][0]
+        )
+        event["message"]["toolCallList"][0]["function"]["arguments"]["phone_number"] = (
+            "4155550100"
+        )
+        assert (
+            "result"
+            in client.post("/calls/vapi", json=event, headers=auth).json()["results"][0]
+        )
+        lookup = lookup_event(None)
+        lookup["message"]["call"].update(
+            {
+                "type": "webCall",
+                "assistantOverrides": {
+                    "variableValues": {"simulationCallerToken": token}
+                },
+            }
+        )
+        assert (
+            "Jane"
+            in client.post("/calls/vapi", json=lookup, headers=auth).json()["results"][
+                0
+            ]["result"]
+        )
+        report = {
+            "message": {
+                "type": "end-of-call-report",
+                "call": lookup["message"]["call"],
+                "artifact": {},
+            }
+        }
+        assert client.post("/calls/vapi", json=report, headers=auth).status_code == 200
+        with Session(client.app.state.engine) as session:
+            log = session.query(CallLog).filter_by(call_id="lookup-call").one()
+            assert log.caller_number == "+14155550100"
+        previous = registration_event(
+            call_id="older-browser-registration",
+            patient={**PATIENT, "first_name": "Mary", "phone_number": "2125550100"},
+        )
+        previous["message"]["call"]["type"] = "webCall"
+        previous["message"]["artifact"]["messages"][0]["message"] = (
+            previous["message"]["artifact"]["messages"][0]["message"]
+            .replace("Jane", "Mary")
+            .replace("4155550100", "2125550100")
+        )
+        assert (
+            "result"
+            in client.post("/calls/vapi", json=previous, headers=auth).json()[
+                "results"
+            ][0]
+        )
+        old_number_token = client.post(
+            "/dashboard/simulation/number",
+            json={"phone_number": "2125550100", "csrf_token": csrf},
+        ).json()["token"]
+        old_lookup = lookup_event(None)
+        old_lookup["message"]["call"].update(
+            {
+                "type": "webCall",
+                "assistantOverrides": {
+                    "variableValues": {"simulationCallerToken": old_number_token}
+                },
+            }
+        )
+        assert (
+            "Mary"
+            in client.post("/calls/vapi", json=old_lookup, headers=auth).json()[
+                "results"
+            ][0]["result"]
+        )
+        lookup["message"]["call"]["assistantOverrides"]["variableValues"] = None
+        assert (
+            "error"
+            in client.post("/calls/vapi", json=lookup, headers=auth).json()["results"][
+                0
+            ]
+        )
+        lookup["message"]["call"]["assistantOverrides"]["variableValues"] = {}
+        lookup["message"]["call"]["assistantOverrides"]["variableValues"][
+            "simulationCallerToken"
+        ] = _signed(
+            client.app.state.settings.dashboard_session_secret,
+            f"+14155550100:{int(time.time()) - 1}",
+        )
+        assert (
+            "error"
+            in client.post("/calls/vapi", json=lookup, headers=auth).json()["results"][
+                0
+            ]
+        )
+        inbound = lookup_event("+12125550100")
+        inbound["message"]["call"]["assistantOverrides"] = {
+            "variableValues": {"simulationCallerToken": token}
+        }
+        assert "Jane" not in str(
+            client.post("/calls/vapi", json=inbound, headers=auth).json()
+        )
+
+
 def test_confirmed_call_saves_once_and_report_keeps_patient_link(tmp_path):
     with make_client(tmp_path) as client:
         headers = {"Authorization": "Bearer test-vapi-token"}

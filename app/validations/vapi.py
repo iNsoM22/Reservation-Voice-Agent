@@ -62,6 +62,9 @@ class CallReportCall(BaseModel):
     ended_at: datetime | None = Field(default=None, alias="endedAt")
     customer: CallParty = Field(default_factory=CallParty)
     phone_number: CallParty = Field(default_factory=CallParty, alias="phoneNumber")
+    assistant_overrides: dict[str, Any] = Field(
+        default_factory=dict, alias="assistantOverrides"
+    )
 
     @field_validator("started_at", "ended_at")
     @classmethod

@@ -10,9 +10,18 @@
 </section>
 <section class="simulation-panel" aria-label="Browser voice test">
   {% if vapi_public_key and vapi_assistant_id %}
-    <p>Allow microphone access, then start a voice conversation with the widget. Use synthetic patient data.</p>
-    <vapi-widget public-key="{{ vapi_public_key }}" assistant-id="{{ vapi_assistant_id }}" mode="voice" theme="light" size="compact" start-button-text="Start voice test" end-button-text="End voice test"></vapi-widget>
-    <p class="simulation-note">Registration and call reports use the same Vapi webhook as phone calls. Existing-record lookup requires an inbound caller number and is unavailable in browser calls.</p>
+    <p>Set a test caller number, then allow microphone access and start a voice conversation. Use synthetic patient data.</p>
+    <form id="simulation-number-form">
+      <label for="simulation-phone">Test caller phone number</label>
+      <input id="simulation-phone" name="phone_number" type="tel" autocomplete="tel" placeholder="4155550100" required>
+      <button type="submit">Set caller number</button>
+      <p id="simulation-number-status" role="status"></p>
+    </form>
+    <input id="simulation-csrf" type="hidden" value="{{ csrf_token }}">
+    <template id="simulation-widget-template"><vapi-widget public-key="{{ vapi_public_key }}" assistant-id="{{ vapi_assistant_id }}" mode="voice" theme="light" size="compact" start-button-text="Start voice test" end-button-text="End voice test"></vapi-widget></template>
+    <div id="simulation-widget"></div>
+    <p class="simulation-note">The test number is used for registration and lookup in browser calls. Phone calls still use their actual caller number.</p>
+    <script src="/static/scripts/simulation-caller.js" defer></script>
     <script src="https://unpkg.com/@vapi-ai/client-sdk-react@0.1.1/dist/embed/widget.umd.js" async type="text/javascript"></script>
   {% else %}
     <p>Browser voice is not configured. Set <code>VAPI_PUBLIC_KEY</code> and <code>VAPI_ASSISTANT_ID</code>, then restart the application.</p>
